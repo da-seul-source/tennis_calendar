@@ -176,7 +176,7 @@
   .stepper button { width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--soft); font-size: 18px; color: var(--fg2); display: grid; place-items: center; }
   .stepper output { min-width: 56px; text-align: center; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-  .people { display: flex; flex-wrap: wrap; gap: 6px; }
+  .people { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .person { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; padding: 4px 4px 4px 12px; border-radius: 999px; background: var(--soft); }
   .person button { width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: var(--fg3); font-size: 13px; display: grid; place-items: center; }
   .addrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
@@ -284,8 +284,6 @@
       </div>
       <div class="fld">
         <span class="lbl">참석자</span>
-        <div class="people" id="f-people"></div>
-        <small class="hint" id="f-people-hint">여/남을 누르면 바뀌어요.</small>
         <div class="addrow">
           <input id="f-person" type="text" placeholder="이름 검색·추가" maxlength="20" autocomplete="off" enterkeyhint="done">
           <div class="gseg" role="group" aria-label="성별">
@@ -295,6 +293,8 @@
           <button type="button" class="btn" id="f-add">추가</button>
         </div>
         <div class="chips" id="f-suggest"></div>
+        <div class="people" id="f-people"></div>
+        <small class="hint" id="f-people-hint">여/남을 누르면 바뀌어요.</small>
       </div>
 
       <div class="fld">
