@@ -470,7 +470,9 @@ function card(ev) {
   if (ev.mine) {
     // 내 코트: 참석자 칩을 눌러 정산 받음 표시
     const got = others.filter(n => ev.paid.indexOf(n) >= 0).length;
-    if (others.length) {
+    // 정산할 사람이 없으면(혼자거나 아직 참석자 없음) 정산 완료로 본다
+    if (!others.length) settle = '<span class="settle ok">✓ 정산 완료</span>';
+    else {
       settle = got === others.length
         ? '<span class="settle ok">✓ 정산 완료</span>'
         : '<span class="settle sum">정산 ' + got + '/' + others.length + '</span>';
@@ -492,8 +494,9 @@ function card(ev) {
   // 금액: 내 코트면 1인 금액, 남 코트면 내가 낼 몫 (캔볼 가져가면 그만큼 빼고)
   let money = "";
   const s = settleOf(ev.courtFee, ev.ballPrice, ev.ballOwner, ev.names);
-  if (s.total && s.n) {
-    if (ev.mine) money = '<span class="money">1인 ' + won(s.per) + '</span>';
+  if (ev.mine && s.total && !s.n) money = '<span class="money">코트비 ' + won(s.total) + '</span>';
+  else if (s.total && s.n) {
+    if (ev.mine) money = '<span class="money">' + (s.n > 1 ? "1인 " + won(s.per) : "코트비 " + won(s.total)) + '</span>';
     else if (ev.names.indexOf(ME) >= 0) {
       const due = s.due(ME);
       money = due < 0 ? '<span class="money get">받을 돈 ' + won(-due) + '</span>' : '<span class="money">내 몫 ' + won(due) + '</span>';
