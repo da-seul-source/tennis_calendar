@@ -535,7 +535,7 @@ function calendarHtml() {
     const cls = "d" + (w === 0 ? " su" : w === 6 ? " sa" : "") + (out ? " out" : "") + (key === tk ? " today" : "") + (key === selDate ? " sel" : "");
     const es = byDate(key);
     let chips = es.slice(0, 2).map(ev =>
-      '<span class="ec' + (key < tk ? " past" : "") + '"><span>' + esc(hour(ev.start)) + '</span><span>' + esc(ev.place) + '</span>' +
+      '<span class="ec' + (key < tk ? " past" : "") + '" data-ev="' + esc(ev.id) + '"><span>' + esc(hour(ev.start)) + '</span><span>' + esc(ev.place) + '</span>' +
       (ev.court ? '<span>' + esc(ev.court) + '</span>' : '') + '</span>').join("");
     if (es.length > 2) chips += '<span class="more">+' + (es.length - 2) + '개</span>';
     g += '<button type="button" class="' + cls + '" data-day="' + key + '" aria-label="' + dateTitle(key) + (es.length ? ", 일정 " + es.length + "개" : "") + '"><span class="n">' + d.getDate() + '</span>' + chips + '</button>';
@@ -596,6 +596,13 @@ el("view").addEventListener("click", e => {
       if (view.m > 11) { view.m = 0; view.y++; }
     }
     render();
+    return;
+  }
+  // 달력 칸 안의 일정을 누르면 그 날을 고르고 바로 상세(수정) 화면을 연다
+  const evChip = t.closest("[data-ev]");
+  if (evChip) {
+    const ev = findEvent(evChip.dataset.ev);
+    if (ev) { selDate = ev.date; render(); openForm(ev.date, ev); }
     return;
   }
   const day = t.closest("[data-day]");
