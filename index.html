@@ -233,6 +233,7 @@
   .ledger { display: grid; gap: 4px; padding: 12px; border-radius: 12px; background: var(--soft); font-size: 13px; }
   .ledger .ln { display: flex; justify-content: space-between; color: var(--fg2); font-variant-numeric: tabular-nums; }
   .ledger .ln.total { color: var(--fg); font-weight: 700; padding-top: 6px; margin-top: 2px; border-top: 1px dashed #D9DCE1; }
+  .ledger .ln.solo { border-top: 0; margin-top: 0; padding-top: 0; }
   .ledger .note { font-size: 11px; color: var(--fg3); }
   .payrows { display: grid; gap: 6px; }
   .payrow { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); }
@@ -719,17 +720,19 @@ function renderDetail() {
   let ppl = ev.names.map(n => '<span class="pp">' + esc(n) + '</span>').join("");
   if (!past) ppl += '<span class="pp open">빈자리</span>'.repeat(left);
 
-  // 비용·정산
+  // 비용·정산: 코트·남 코트·행사 모두 같은 모양 (금액 상자 + 사람별 줄)
   const s = settleOf(ev.courtFee, ev.ballPrice, ev.ballOwner, ev.names, club ? ev.entryFee : 0);
-  let cost = "";
-  if (club && ev.entryFee) cost = '<div class="ledger"><div class="ln total" style="border-top: 0; margin-top: 0; padding-top: 0"><span>참가비 (1인)</span><span>' + won(ev.entryFee) + '</span></div></div>';
-  else if (!club && !ev.mine && ev.myDue) cost = '<div class="ledger"><div class="ln total" style="border-top: 0; margin-top: 0; padding-top: 0"><span>내가 낼 돈</span><span>' + won(ev.myDue) + '</span></div></div>';
-  else if (!club && s.total) {
-    cost = '<div class="ledger"><div class="ln"><span>코트비</span><span>' + won(ev.courtFee) + '</span></div>' +
-      (ev.ballPrice ? '<div class="ln"><span>캔볼</span><span>' + won(ev.ballPrice) + (ev.ballOwner ? ' (' + who(ev.ballOwner) + ')' : '') + '</span></div>' : '') +
-      '<div class="ln total"><span>1인 (' + s.n + '명)</span><span>' + (s.n ? won(s.per) : "–") + '</span></div></div>';
-  }
-  let settle = "";
+  const amt = n => n ? won(n) : "–";
+  const box = rows => '<div class="ledger">' + rows + '</div>';
+  const line = (k, v, total) => '<div class="ln' + (total ? ' total' : '') + '"><span>' + k + '</span><span>' + v + '</span></div>';
+  let cost;
+  if (club) cost = box('<div class="ln total solo"><span>참가비 (1인)</span><span>' + amt(ev.entryFee) + '</span></div>');
+  else if (!ev.mine) cost = box('<div class="ln total solo"><span>내가 낼 돈</span><span>' + amt(ev.myDue) + '</span></div>');
+  else cost = box(line("코트비", amt(ev.courtFee)) +
+    (ev.ballPrice ? line("캔볼", won(ev.ballPrice) + (ev.ballOwner ? ' (' + who(ev.ballOwner) + ')' : '')) : '') +
+    line("1인 (" + s.n + "명)", s.total && s.n ? won(s.per) : "–", true));
+
+  let settle;
   if (ev.mine) {
     const others = ev.names.filter(n => n !== ME);
     settle = others.length
@@ -738,17 +741,19 @@ function renderDetail() {
           return '<div class="payrow"><span class="nm">' + esc(n) + '</span><span class="amt">' + (s.total ? (d < 0 ? "돌려줄 돈 " + won(-d) : won(d)) : "") + '</span>' +
             '<button type="button" data-vpay="' + esc(n) + '" aria-pressed="' + ok + '">' + (ok ? "받음" : "안 받음") + '</button></div>';
         }).join("") + '</div>'
-      : '<div class="ledger"><div class="note">정산할 사람이 없어서 정산 완료로 표시돼요.</div></div>';
+      : box('<div class="note">정산할 사람이 없어서 정산 완료로 표시돼요.</div>');
   } else {
-    const due = !club && ev.myDue ? ev.myDue : ev.names.indexOf(ME) >= 0 && s.total ? s.due(ME) : null;
-    settle = '<button type="button" class="mypay ' + (ev.myPaid ? "ok" : "no") + '" data-vmypay>' +
-      (ev.myPaid ? "✓ 정산 완료" : "정산 전" + (due !== null && due > 0 ? " (내 몫 " + won(due) + ")" : "")) + '</button>';
+    // 남 코트·행사: 내가 보낼 돈 한 줄
+    const due = club ? ev.entryFee : ev.myDue;
+    settle = '<div class="payrows"><div class="payrow"><span class="nm">' + (ev.host ? who(ev.host) + "에게" : "내 몫") + '</span>' +
+      '<span class="amt">' + (due ? won(due) : "") + '</span>' +
+      '<button type="button" data-vmypay aria-pressed="' + ev.myPaid + '">' + (ev.myPaid ? "보냄" : "안 보냄") + '</button></div></div>';
   }
 
   el("v-body").innerHTML =
     '<div class="kvs">' + kv + '</div>' +
     '<div class="v-sec"><span class="lbl">참석자</span>' + (ppl ? '<div class="ppl">' + ppl + '</div>' : '<span class="hint">아직 없어요.</span>') + '</div>' +
-    (cost ? '<div class="v-sec"><span class="lbl">비용</span>' + cost + '</div>' : '') +
+    '<div class="v-sec"><span class="lbl">비용</span>' + cost + '</div>' +
     '<div class="v-sec"><span class="lbl">정산</span>' + settle + '</div>' +
     (ev.memo ? '<div class="v-sec"><span class="lbl">메모</span><div class="v-memo">' + esc(ev.memo) + '</div></div>' : '');
 }
