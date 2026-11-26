@@ -200,6 +200,19 @@
   .money.get { color: var(--tint-fg); }
   .r2 { display: flex; align-items: center; gap: 8px; }
   .club { font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 6px; border-radius: 5px; background: var(--tint); color: var(--tint-fg); white-space: nowrap; }
+  .v-head { display: grid; gap: 4px; min-width: 0; }
+  .v-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .v-tags:empty { display: none; }
+  .kvs { display: grid; }
+  .kv { display: flex; justify-content: space-between; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .kv:first-child { padding-top: 0; }
+  .kv span { color: var(--fg2); flex: 0 0 auto; }
+  .kv b { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+  .v-sec { display: grid; gap: 8px; }
+  .v-memo { font-size: 13px; color: var(--fg); white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; border-radius: 12px; background: var(--soft); }
+  .mypay { border: 0; height: 44px; border-radius: 12px; font-size: 14px; font-weight: 500; }
+  .mypay.no { background: transparent; color: var(--sun); box-shadow: inset 0 0 0 1px currentColor; }
+  .mypay.ok { background: var(--tint); color: var(--tint-fg); }
   .short { font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 6px; border-radius: 999px; color: var(--sun); box-shadow: inset 0 0 0 1px currentColor; white-space: nowrap; }
   .person.open { background: transparent; color: var(--fg3); box-shadow: inset 0 0 0 1px var(--line); padding: 4px 12px; font-weight: 400; }
   .memo { font-size: 12px; color: var(--fg2); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -249,6 +262,25 @@
 
 <button type="button" class="fab" id="fab"><span aria-hidden="true">+</span>일정 등록</button>
 <div class="toast" id="toast" role="status" hidden></div>
+
+<!-- ─────────── 일정 상세 (읽기 전용) ─────────── -->
+<dialog id="dlg-view" aria-labelledby="v-title">
+  <div class="sheet">
+    <div class="sh-head">
+      <div class="v-head">
+        <h2 id="v-title" tabindex="-1" autofocus style="outline: none">일정</h2>
+        <div class="v-tags" id="v-tags"></div>
+      </div>
+      <button type="button" class="x" data-vclose aria-label="닫기">✕</button>
+    </div>
+    <div class="sh-body" id="v-body"></div>
+    <div class="sh-foot">
+      <span class="sp"></span>
+      <button type="button" class="btn" data-vclose>닫기</button>
+      <button type="button" class="btn primary" id="v-edit">수정</button>
+    </div>
+  </div>
+</dialog>
 
 <!-- ─────────── 일정 등록·수정 ─────────── -->
 <dialog id="dlg" aria-labelledby="f-title">
@@ -304,6 +336,7 @@
       <div class="fld">
         <span class="lbl" id="f-host-lbl">예약자</span>
         <div class="chips" id="f-host"></div>
+        <input id="f-host-text" type="text" placeholder="클럽이나 주최한 사람 이름" maxlength="30" autocomplete="off" hidden>
         <small class="hint" id="f-host-hint">나를 고르면 내 코트예요. 참석자별로 정산 받았는지 체크해요.</small>
       </div>
       <div class="fld" id="f-owner-fld">
@@ -384,6 +417,7 @@ let selDate = todayKey();
 let view = { y: +selDate.slice(0, 4), m: +selDate.slice(5, 7) - 1 };
 let mode = "cal";
 let showPast = false;
+let viewId = null;      // 열려 있는 상세 보기
 
 /* ---------- 도우미 ---------- */
 function pad(n) { return (n < 10 ? "0" : "") + n; }
@@ -476,6 +510,7 @@ onSnapshot(EVENTS, { includeMetadataChanges: true }, snap => {
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
   el("sync").hidden = !(snap.metadata.hasPendingWrites);
   render();
+  if (viewId) renderDetail();
 }, err => toast("일정을 불러오지 못했어요. " + errText(err), true));
 
 /* ---------- 그리기 ---------- */
@@ -613,7 +648,7 @@ el("view").addEventListener("click", e => {
   const evChip = t.closest("[data-ev]");
   if (evChip) {
     const ev = findEvent(evChip.dataset.ev);
-    if (ev) { selDate = ev.date; render(); openForm(ev.date, ev); }
+    if (ev) { selDate = ev.date; render(); openView(ev); }
     return;
   }
   const day = t.closest("[data-day]");
@@ -631,29 +666,102 @@ el("view").addEventListener("click", e => {
   const ev = findEvent(art.dataset.id);
   if (!ev) return;
   const pay = t.closest("[data-pay]");
-  if (pay) {
-    const name = pay.dataset.pay;
-    const has = ev.paid.indexOf(name) >= 0;
-    updateDoc(doc(EVENTS, ev.id), { paid: has ? arrayRemove(name) : arrayUnion(name) })
-      .catch(err => toast("저장하지 못했어요. " + errText(err), true));
-    return;
-  }
-  if (t.closest("[data-mypay]")) {
-    updateDoc(doc(EVENTS, ev.id), { myPaid: !ev.myPaid })
-      .catch(err => toast("저장하지 못했어요. " + errText(err), true));
-    return;
-  }
-  openForm(ev.date, ev);
+  if (pay) { togglePaid(ev, pay.dataset.pay); return; }
+  if (t.closest("[data-mypay]")) { toggleMyPaid(ev); return; }
+  openView(ev);
 });
+function togglePaid(ev, name) {
+  const has = ev.paid.indexOf(name) >= 0;
+  updateDoc(doc(EVENTS, ev.id), { paid: has ? arrayRemove(name) : arrayUnion(name) })
+    .catch(err => toast("저장하지 못했어요. " + errText(err), true));
+}
+function toggleMyPaid(ev) {
+  updateDoc(doc(EVENTS, ev.id), { myPaid: !ev.myPaid })
+    .catch(err => toast("저장하지 못했어요. " + errText(err), true));
+}
 el("view").addEventListener("keydown", e => {
   if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-id]")) {
     e.preventDefault();
     const ev = findEvent(e.target.dataset.id);
-    if (ev) openForm(ev.date, ev);
+    if (ev) openView(ev);
   }
 });
 
 el("fab").addEventListener("click", () => openForm(selDate));
+
+/* ---------- 상세 보기 (읽기 전용, 정산 체크만 가능) ---------- */
+function openView(ev) {
+  viewId = ev.id;
+  renderDetail();
+  el("dlg-view").showModal();
+}
+function renderDetail() {
+  const ev = findEvent(viewId);
+  if (!ev) { if (el("dlg-view").open) { el("dlg-view").close(); toast("이 일정은 삭제됐어요.", true); } return; }
+  const club = ev.kind === "club", past = ev.date < todayKey();
+  el("v-title").textContent = (ev.place || "장소 미정") + (ev.court ? " " + ev.court : "");
+  el("v-tags").innerHTML = (club ? '<span class="club">' + esc(ev.clubTag || "행사") + '</span>' : '') +
+    (ev.type && ev.type !== "교류전" ? '<span class="type">' + esc(ev.type) + '</span>' : '') +
+    (ev.ball ? ballSvg("내가 캔볼 챙김") : '');
+
+  const who = n => n === ME ? "나" : esc(n || "") || '<span style="color: var(--fg3)">미정</span>';
+  const cap = ev.capF + ev.capM;
+  let kv = '<div class="kv"><span>일시</span><b>' + dateTitle(ev.date) + ' ' + esc(ev.start || "--:--") + ' – ' + esc(ev.end || "--:--") + '</b></div>' +
+    '<div class="kv"><span>' + (club ? "주최" : "예약자") + '</span><b>' + who(ev.host) + '</b></div>' +
+    (club ? '' : '<div class="kv"><span>캔볼</span><b>' + who(ev.ballOwner) + '</b></div>') +
+    '<div class="kv"><span>인원</span><b>' + (cap ? "여 " + ev.capF + ", 남 " + ev.capM : "제한 없음") + '</b></div>';
+
+  // 참석자 + 빈자리
+  const left = cap ? Math.max(0, cap - ev.names.length) : 0;
+  let ppl = ev.names.map(n => '<span class="pp">' + esc(n) + '</span>').join("");
+  if (!past) ppl += '<span class="pp open">빈자리</span>'.repeat(left);
+
+  // 비용·정산
+  const s = settleOf(ev.courtFee, ev.ballPrice, ev.ballOwner, ev.names, club ? ev.entryFee : 0);
+  let cost = "";
+  if (club && ev.entryFee) cost = '<div class="ledger"><div class="ln total" style="border-top: 0; margin-top: 0; padding-top: 0"><span>참가비 (1인)</span><span>' + won(ev.entryFee) + '</span></div></div>';
+  else if (!club && s.total) {
+    cost = '<div class="ledger"><div class="ln"><span>코트비</span><span>' + won(ev.courtFee) + '</span></div>' +
+      (ev.ballPrice ? '<div class="ln"><span>캔볼</span><span>' + won(ev.ballPrice) + (ev.ballOwner ? ' (' + who(ev.ballOwner) + ')' : '') + '</span></div>' : '') +
+      '<div class="ln total"><span>1인 (' + s.n + '명)</span><span>' + (s.n ? won(s.per) : "–") + '</span></div></div>';
+  }
+  let settle = "";
+  if (ev.mine) {
+    const others = ev.names.filter(n => n !== ME);
+    settle = others.length
+      ? '<div class="payrows">' + others.map(n => {
+          const ok = ev.paid.indexOf(n) >= 0, d = s.due(n);
+          return '<div class="payrow"><span class="nm">' + esc(n) + '</span><span class="amt">' + (s.total ? (d < 0 ? "돌려줄 돈 " + won(-d) : won(d)) : "") + '</span>' +
+            '<button type="button" data-vpay="' + esc(n) + '" aria-pressed="' + ok + '">' + (ok ? "받음" : "안 받음") + '</button></div>';
+        }).join("") + '</div>'
+      : '<div class="ledger"><div class="note">정산할 사람이 없어서 정산 완료로 표시돼요.</div></div>';
+  } else {
+    const due = ev.names.indexOf(ME) >= 0 && s.total ? s.due(ME) : null;
+    settle = '<button type="button" class="mypay ' + (ev.myPaid ? "ok" : "no") + '" data-vmypay>' +
+      (ev.myPaid ? "✓ 정산 완료" : "정산 전" + (due !== null && due > 0 ? " (내 몫 " + won(due) + ")" : "")) + '</button>';
+  }
+
+  el("v-body").innerHTML =
+    '<div class="kvs">' + kv + '</div>' +
+    '<div class="v-sec"><span class="lbl">참석자</span>' + (ppl ? '<div class="ppl">' + ppl + '</div>' : '<span class="hint">아직 없어요.</span>') + '</div>' +
+    (cost ? '<div class="v-sec"><span class="lbl">비용</span>' + cost + '</div>' : '') +
+    '<div class="v-sec"><span class="lbl">정산</span>' + settle + '</div>' +
+    (ev.memo ? '<div class="v-sec"><span class="lbl">메모</span><div class="v-memo">' + esc(ev.memo) + '</div></div>' : '');
+}
+el("v-body").addEventListener("click", e => {
+  const ev = findEvent(viewId);
+  if (!ev) return;
+  const b = e.target.closest("[data-vpay]");
+  if (b) { togglePaid(ev, b.dataset.vpay); return; }
+  if (e.target.closest("[data-vmypay]")) toggleMyPaid(ev);
+});
+el("v-edit").addEventListener("click", () => {
+  const ev = findEvent(viewId);
+  el("dlg-view").close();
+  if (ev) openForm(ev.date, ev);
+});
+document.addEventListener("click", e => { if (e.target.closest("[data-vclose]")) el("dlg-view").close(); });
+el("dlg-view").addEventListener("close", () => { viewId = null; });
 
 /* ---------- 등록·수정 폼 ---------- */
 let editingId = null;
@@ -686,7 +794,7 @@ function renderRoles() {
   pickChips("f-owner", "owner", F.owner, "");
 }
 function renderSettle() {
-  const mine = F.host === ME;
+  const mine = F.kind !== "club" && F.host === ME;
   const entry = F.kind === "club";
   el("f-entry-box").hidden = !entry;
   el("f-split-box").hidden = entry;
@@ -737,7 +845,9 @@ function renderKind() {
   el("f-tags").hidden = !club;
   el("f-tags").innerHTML = CLUB_TAGS.map(t => '<button type="button" class="opt" data-tag="' + t + '" aria-pressed="' + (F.clubTag === t) + '">' + t + '</button>').join("");
   el("f-host-lbl").textContent = club ? "주최" : "예약자";
-  el("f-host-hint").textContent = club ? "참가비를 보낼 사람이에요." : "나를 고르면 내 코트예요. 참석자별로 정산 받았는지 체크해요.";
+  el("f-host").hidden = club;
+  el("f-host-text").hidden = !club;
+  el("f-host-hint").textContent = club ? "참가비를 보낼 곳이에요." : "나를 고르면 내 코트예요. 참석자별로 정산 받았는지 체크해요.";
   el("f-owner-fld").hidden = club;
 }
 function renderForm() { renderKind(); renderTypes(); renderCaps(); renderPeople(); renderRoles(); renderSettle(); renderGseg(); }
@@ -786,6 +896,7 @@ function openForm(dateKey, ev) {
   el("f-entry").value = ev && ev.entryFee ? ev.entryFee : "";
   el("f-mypaid").checked = ev ? ev.myPaid : false;
   el("f-person").value = "";
+  el("f-host-text").value = ev && ev.kind === "club" ? ev.host : "";
   F = {
     type: ev ? ev.type : "",
     capF: ev ? ev.capF : 0, capM: ev ? ev.capM : 0, capAuto: !ev,
@@ -871,13 +982,14 @@ el("f-payrows").addEventListener("click", e => {
   renderSettle();
 });
 ["f-fee", "f-bprice", "f-entry"].forEach(id => el(id).addEventListener("input", renderSettle));
+el("f-host-text").addEventListener("input", () => { F.host = str(el("f-host-text").value); renderSettle(); });
 el("f-kind").addEventListener("click", e => {
   const b = e.target.closest("[data-kind]");
   if (!b || F.kind === b.dataset.kind) return;
   F.kind = b.dataset.kind;
   // 클럽은 남이 연 자리: 주최·캔볼에서 '나'를 뺀다. 코트로 돌아오면 다시 나로
-  if (F.kind === "club") { if (F.host === ME) F.host = ""; F.owner = ""; }
-  else { if (!F.host) F.host = ME; if (!F.owner) F.owner = ME; }
+  if (F.kind === "club") { if (F.host === ME) F.host = ""; F.owner = ""; el("f-host-text").value = F.host; }
+  else { F.host = ME; if (!F.owner) F.owner = ME; }
   renderKind(); renderRoles(); renderSettle();
 });
 el("f-tags").addEventListener("click", e => {
@@ -915,7 +1027,8 @@ el("form").addEventListener("submit", e => {
   if (!date) return showErr("날짜를 골라 주세요.", "f-date");
 
   const club = F.kind === "club";
-  const mine = F.host === ME, ball = !club && F.owner === ME;
+  if (club) F.host = str(el("f-host-text").value);
+  const mine = !club && F.host === ME, ball = !club && F.owner === ME;
   const names = F.people.map(p => p.name);
   const payload = {
     date: date, start: el("f-start").value || "", end: el("f-end").value || "",
@@ -924,7 +1037,7 @@ el("form").addEventListener("submit", e => {
     memo: str(el("f-memo").value),
     courtFee: club ? 0 : num(el("f-fee").value), ballPrice: club ? 0 : num(el("f-bprice").value),
     kind: F.kind, clubTag: club ? F.clubTag : "", feeMode: club ? "entry" : "split", entryFee: club ? num(el("f-entry").value) : 0,
-    mine: mine, host: mine ? ME : (names.indexOf(F.host) >= 0 ? F.host : ""),
+    mine: mine, host: club ? F.host : mine ? ME : (names.indexOf(F.host) >= 0 ? F.host : ""),
     ball: ball, ballOwner: club ? "" : ball ? ME : (names.indexOf(F.owner) >= 0 ? F.owner : ""),
     participants: F.people.map(p => ({ id: p.id, name: p.name, gender: p.gender || "", at: p.at || Date.now() })),
     paid: F.paid.filter(n => names.indexOf(n) >= 0),
