@@ -344,6 +344,7 @@
         <div class="chips" id="f-owner"></div>
       </div>
 
+      <div class="fld" id="f-due-box" hidden><label for="f-due">내가 낼 돈 (원)</label><input id="f-due" type="text" inputmode="numeric" placeholder="6000" maxlength="9" autocomplete="off"></div>
       <div class="fld" id="f-entry-box" hidden><label for="f-entry">참가비 (1인, 원)</label><input id="f-entry" type="text" inputmode="numeric" placeholder="30000" maxlength="9" autocomplete="off"></div>
       <div class="row" id="f-split-box">
         <div class="fld"><label for="f-fee">코트비 (원)</label><input id="f-fee" type="text" inputmode="numeric" placeholder="20000" maxlength="9" autocomplete="off"></div>
@@ -489,6 +490,7 @@ function normalize(id, d) {
     kind: d.kind === "club" || d.feeMode === "entry" ? "club" : "court",
     clubTag: str(d.clubTag) || (str(d.gameType) === "교류전" ? "교류전" : ""),
     entryFee: num(d.entryFee),
+    myDue: num(d.myDue),   // 남 코트: 내가 낼 돈 (계산 없이 직접 적는다)
     ball: ball, ballOwner: ball ? ME : str(d.ballOwner),
     host: str(d.host),
     participants: parts,
@@ -545,7 +547,8 @@ function card(ev) {
   // 금액: 내 코트면 1인 금액, 남 코트면 내가 낼 몫 (캔볼 가져가면 그만큼 빼고)
   let money = "";
   const s = settleOf(ev.courtFee, ev.ballPrice, ev.ballOwner, ev.names, ev.kind === "club" ? ev.entryFee : 0);
-  if (ev.kind === "club") { if (ev.entryFee) money = '<span class="money">참가비 ' + won(ev.entryFee) + '</span>'; }
+  if (ev.kind !== "club" && !ev.mine && ev.myDue) money = '<span class="money">내 몫 ' + won(ev.myDue) + '</span>';
+  else if (ev.kind === "club") { if (ev.entryFee) money = '<span class="money">참가비 ' + won(ev.entryFee) + '</span>'; }
   else if (ev.mine && s.total && !s.n) money = '<span class="money">코트비 ' + won(s.total) + '</span>';
   else if (s.total && s.n) {
     if (ev.mine) money = '<span class="money">' + (s.n > 1 ? "1인 " + won(s.per) : "코트비 " + won(s.total)) + '</span>';
@@ -720,6 +723,7 @@ function renderDetail() {
   const s = settleOf(ev.courtFee, ev.ballPrice, ev.ballOwner, ev.names, club ? ev.entryFee : 0);
   let cost = "";
   if (club && ev.entryFee) cost = '<div class="ledger"><div class="ln total" style="border-top: 0; margin-top: 0; padding-top: 0"><span>참가비 (1인)</span><span>' + won(ev.entryFee) + '</span></div></div>';
+  else if (!club && !ev.mine && ev.myDue) cost = '<div class="ledger"><div class="ln total" style="border-top: 0; margin-top: 0; padding-top: 0"><span>내가 낼 돈</span><span>' + won(ev.myDue) + '</span></div></div>';
   else if (!club && s.total) {
     cost = '<div class="ledger"><div class="ln"><span>코트비</span><span>' + won(ev.courtFee) + '</span></div>' +
       (ev.ballPrice ? '<div class="ln"><span>캔볼</span><span>' + won(ev.ballPrice) + (ev.ballOwner ? ' (' + who(ev.ballOwner) + ')' : '') + '</span></div>' : '') +
@@ -736,7 +740,7 @@ function renderDetail() {
         }).join("") + '</div>'
       : '<div class="ledger"><div class="note">정산할 사람이 없어서 정산 완료로 표시돼요.</div></div>';
   } else {
-    const due = ev.names.indexOf(ME) >= 0 && s.total ? s.due(ME) : null;
+    const due = !club && ev.myDue ? ev.myDue : ev.names.indexOf(ME) >= 0 && s.total ? s.due(ME) : null;
     settle = '<button type="button" class="mypay ' + (ev.myPaid ? "ok" : "no") + '" data-vmypay>' +
       (ev.myPaid ? "✓ 정산 완료" : "정산 전" + (due !== null && due > 0 ? " (내 몫 " + won(due) + ")" : "")) + '</button>';
   }
@@ -796,14 +800,17 @@ function renderRoles() {
 function renderSettle() {
   const mine = F.kind !== "club" && F.host === ME;
   const entry = F.kind === "club";
+  const theirs = !entry && !mine;          // 남 코트: 내가 낼 돈만
+  const myDue = theirs ? num(el("f-due").value) : 0;
   el("f-entry-box").hidden = !entry;
-  el("f-split-box").hidden = entry;
+  el("f-due-box").hidden = !theirs;
+  el("f-split-box").hidden = entry || theirs;
   const ef = entry ? num(el("f-entry").value) : 0;
   const fee = entry ? 0 : num(el("f-fee").value), bp = entry ? 0 : num(el("f-bprice").value);
   const owner = F.owner;
   const ins = formIns();
   const s = settleOf(fee, bp, owner, ins, ef);
-  const showLedger = entry ? ef > 0 : fee + bp > 0;
+  const showLedger = theirs ? false : entry ? ef > 0 : fee + bp > 0;
   el("f-ledger").hidden = !showLedger;
   let h = entry
     ? '<div class="ln total" style="border-top: 0; margin-top: 0; padding-top: 0"><span>참가비 (1인)</span><span>' + won(ef) + '</span></div>' +
@@ -833,6 +840,7 @@ function renderSettle() {
     const d = ins.indexOf(ME) >= 0 && s.total ? s.due(ME) : null;
     el("f-mypaid-row").hidden = !F.host && !showLedger;
     if (entry) el("f-mypaid-sub").textContent = (F.host ? F.host + "에게 " : "") + "참가비" + (ef ? " " + won(ef) + "을" : "를") + " 냈으면 켜요.";
+    else if (theirs) el("f-mypaid-sub").textContent = (F.host ? F.host + "에게 " : "예약자에게 ") + (myDue ? won(myDue) + "을" : "내 몫을") + " 보냈으면 켜요.";
     else el("f-mypaid-sub").textContent = (F.host ? F.host + "에게 " : "예약자에게 ") +
       (d === null ? "내 몫을 보냈으면 켜요." : d < 0 ? won(-d) + " 받을 차례예요. 받았으면 켜요." : "내 몫 " + won(d) + "을 보냈으면 켜요.");
   }
@@ -894,6 +902,7 @@ function openForm(dateKey, ev) {
   el("f-fee").value = ev && ev.courtFee ? ev.courtFee : "";
   el("f-bprice").value = ev && ev.ballPrice ? ev.ballPrice : "";
   el("f-entry").value = ev && ev.entryFee ? ev.entryFee : "";
+  el("f-due").value = ev && ev.myDue ? ev.myDue : "";
   el("f-mypaid").checked = ev ? ev.myPaid : false;
   el("f-person").value = "";
   el("f-host-text").value = ev && ev.kind === "club" ? ev.host : "";
@@ -981,7 +990,7 @@ el("f-payrows").addEventListener("click", e => {
   if (k >= 0) F.paid.splice(k, 1); else F.paid.push(n);
   renderSettle();
 });
-["f-fee", "f-bprice", "f-entry"].forEach(id => el(id).addEventListener("input", renderSettle));
+["f-fee", "f-bprice", "f-entry", "f-due"].forEach(id => el(id).addEventListener("input", renderSettle));
 el("f-host-text").addEventListener("input", () => { F.host = str(el("f-host-text").value); renderSettle(); });
 el("f-kind").addEventListener("click", e => {
   const b = e.target.closest("[data-kind]");
@@ -1035,7 +1044,8 @@ el("form").addEventListener("submit", e => {
     place: place, court: str(el("f-court").value), gameType: F.type,
     capF: F.capF, capM: F.capM, capacity: F.capF + F.capM,
     memo: str(el("f-memo").value),
-    courtFee: club ? 0 : num(el("f-fee").value), ballPrice: club ? 0 : num(el("f-bprice").value),
+    courtFee: club || !mine ? 0 : num(el("f-fee").value), ballPrice: club || !mine ? 0 : num(el("f-bprice").value),
+    myDue: !club && !mine ? num(el("f-due").value) : 0,
     kind: F.kind, clubTag: club ? F.clubTag : "", feeMode: club ? "entry" : "split", entryFee: club ? num(el("f-entry").value) : 0,
     mine: mine, host: club ? F.host : mine ? ME : (names.indexOf(F.host) >= 0 ? F.host : ""),
     ball: ball, ballOwner: club ? "" : ball ? ME : (names.indexOf(F.owner) >= 0 ? F.owner : ""),
