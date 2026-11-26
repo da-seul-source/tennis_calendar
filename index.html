@@ -49,7 +49,9 @@
      카드 밖 글줄은 좌우 4 들여쓰기 */
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  html { touch-action: manipulation; } /* 버튼을 빠르게 두 번 눌러도 화면이 확대되지 않게 */
+  html { touch-action: manipulation; }
+  /* 홈 화면 앱에서 상태바(시간·배터리) 뒤로 내용이 비쳐 블러가 생기지 않게, 그 자리를 흰 띠로 덮는다 */
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 25; } /* 버튼을 빠르게 두 번 눌러도 화면이 확대되지 않게 */
   html, body { margin: 0; background: var(--bg); }
   body {
     color: var(--fg); font-family: var(--sans); font-size: 13px; line-height: 1.45;
