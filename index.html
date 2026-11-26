@@ -262,7 +262,7 @@
         <span class="lbl">종류</span>
         <div class="seg" id="f-kind" role="group" aria-label="일정 종류">
           <button type="button" data-kind="court" aria-pressed="true">코트</button>
-          <button type="button" data-kind="club" aria-pressed="false">클럽</button>
+          <button type="button" data-kind="club" aria-pressed="false">행사</button>
         </div>
         <div class="chips" id="f-tags" hidden></div>
       </div>
@@ -375,7 +375,7 @@ const EVENTS = collection(db, "events");
 /* ---------- 상태 ---------- */
 const DOW = ["일", "월", "화", "수", "목", "금", "토"];
 const TYPES = ["혼복", "여복", "남복", "단식", "랠리"];
-const CLUB_TAGS = ["정모", "교류전", "대회", "번개"];
+const CLUB_TAGS = ["클럽", "교류전", "대회"];   // 행사 꼬리표 (내부 값은 kind: "club")
 const TYPE_PRESET = { "혼복": [2, 2], "여복": [4, 0], "남복": [0, 4] };   // 고르면 여/남 인원을 채워 준다
 let events = [];
 /* '오늘'은 폰 설정과 상관없이 한국 시간으로 */
@@ -523,7 +523,7 @@ function card(ev) {
   const title = (ev.place || "장소 미정") + (ev.court ? " " + ev.court : "");
   return '<article class="ev' + (past ? " past" : "") + '" data-id="' + esc(ev.id) + '" tabindex="0" aria-label="' + esc(title) + ' 일정 수정">' +
     '<div class="hd"><div class="r1"><span class="court">' + esc(title) + '</span>' +
-    (ev.kind === "club" ? '<span class="club">' + esc(ev.clubTag || "클럽") + '</span>' : '') +
+    (ev.kind === "club" ? '<span class="club">' + esc(ev.clubTag || "행사") + '</span>' : '') +
     (ev.type && ev.type !== "교류전" ? '<span class="type">' + esc(ev.type) + '</span>' : '') +
     (ev.ball ? ballSvg("내가 캔볼 챙김") : '') +
     (!past && left > 0 ? '<span class="short">' + left + '명 부족</span>' : '') +
