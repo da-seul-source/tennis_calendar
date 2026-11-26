@@ -212,7 +212,12 @@
   .person.wait .g { background: var(--soft); }
   .opt .ball { display: inline-block; vertical-align: -3px; margin-right: 4px; }
   .person.wait::before { content: "대기"; font-size: 11px; color: var(--fg3); margin-right: 4px; }
-  .addrow { grid-template-columns: 1fr auto; }
+  .addrow { grid-template-columns: 1fr auto auto; }
+  .gseg { display: flex; background: var(--soft); border-radius: 12px; padding: 3px; }
+  .gseg button { border: 0; background: transparent; width: 38px; border-radius: 9px; font-size: 13px; color: var(--fg2); }
+  .gseg button[aria-pressed="true"] { background: #fff; color: var(--fg); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  .sug { border: 0; height: 30px; padding: 0 12px; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; color: var(--fg); }
+  .sug small { font-size: 11px; color: var(--fg3); margin-left: 4px; }
   input[inputmode="numeric"] { font-variant-numeric: tabular-nums; }
   .sub { display: grid; gap: 6px; }
   .ledger { display: grid; gap: 4px; padding: 12px; border-radius: 12px; background: var(--soft); font-size: 13px; }
@@ -282,9 +287,14 @@
         <div class="people" id="f-people"></div>
         <small class="hint" id="f-people-hint">여/남을 누르면 바뀌어요.</small>
         <div class="addrow">
-          <input id="f-person" type="text" placeholder="이름 추가" maxlength="20" autocomplete="off" enterkeyhint="done">
+          <input id="f-person" type="text" placeholder="이름 검색·추가" maxlength="20" autocomplete="off" enterkeyhint="done">
+          <div class="gseg" role="group" aria-label="성별">
+            <button type="button" data-g="F" aria-pressed="true">여</button>
+            <button type="button" data-g="M" aria-pressed="false">남</button>
+          </div>
           <button type="button" class="btn" id="f-add">추가</button>
         </div>
+        <div class="chips" id="f-suggest"></div>
       </div>
 
       <div class="fld">
@@ -711,7 +721,31 @@ function renderSettle() {
   // 보여 줄 게 없으면 정산 칸째로 숨긴다
   el("f-settle").hidden = el("f-ledger").hidden && el("f-payrows").hidden && el("f-mypaid-row").hidden;
 }
-function renderForm() { renderTypes(); renderCaps(); renderPeople(); renderRoles(); renderSettle(); }
+function renderForm() { renderTypes(); renderCaps(); renderPeople(); renderRoles(); renderSettle(); renderSuggest(); renderGseg(); }
+
+/* 예전 일정에 나온 사람들 (이름 → 마지막으로 쓴 성별), 자주 나온 순 */
+function knownPeople() {
+  const m = {};
+  events.forEach(ev => ev.participants.forEach(p => {
+    if (p.name === ME) return;
+    const k = m[p.name] || (m[p.name] = { name: p.name, gender: "", n: 0, last: "" });
+    k.n++;
+    if (p.gender && ev.date >= k.last) { k.gender = p.gender; k.last = ev.date; }
+  }));
+  return Object.values(m).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, "ko"));
+}
+function renderSuggest() {
+  const q = str(el("f-person").value);
+  const have = F.people.map(p => p.name);
+  const list = knownPeople().filter(k => have.indexOf(k.name) < 0 && (!q || k.name.indexOf(q) >= 0)).slice(0, 15);
+  el("f-suggest").hidden = !list.length;
+  el("f-suggest").innerHTML = list.map(k =>
+    '<button type="button" class="sug" data-sug="' + esc(k.name) + '" data-sg="' + (k.gender || "") + '">' + esc(k.name) +
+    (k.gender ? '<small>' + (k.gender === "M" ? "남" : "여") + '</small>' : '') + '</button>').join("");
+}
+function renderGseg() {
+  document.querySelectorAll(".gseg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.g === F.g)));
+}
 
 /* 새로 넣는 사람 성별: 남은 자리에 맞춘다 (여자 자리가 남으면 여, 아니면 남) */
 function nextGender() {
@@ -722,13 +756,18 @@ function nextGender() {
   if (m < F.capM) return "M";
   return F.capF >= F.capM ? "F" : "M";
 }
+function addName(n, g) {
+  if (!F.people.some(p => p.name === n)) F.people.push({ id: uid(), name: n, gender: g || nextGender(), at: Date.now() });
+  F.g = nextGender();
+  renderPeople(); renderRoles(); renderSettle(); renderGseg();
+}
 function addPerson() {
   const inp = el("f-person");
   const n = str(inp.value);
   if (!n) return;
-  if (!F.people.some(p => p.name === n)) F.people.push({ id: uid(), name: n, gender: nextGender(), at: Date.now() });
+  addName(n, F.g);
   inp.value = "";
-  renderPeople(); renderRoles(); renderSettle();
+  renderSuggest();
   inp.focus();
 }
 
@@ -752,10 +791,11 @@ function openForm(dateKey, ev) {
     type: ev ? ev.type : "",
     capF: ev ? ev.capF : 0, capM: ev ? ev.capM : 0, capAuto: !ev,
     people: ev ? ev.participants.map(p => Object.assign({}, p)) : [{ id: uid(), name: ME, gender: ME_GENDER, at: Date.now() }],
-    host: ev ? (ev.mine ? ME : ev.host) : "",
-    owner: ev ? ev.ballOwner : "",
+    host: ev ? (ev.mine ? ME : ev.host) : ME,
+    owner: ev ? ev.ballOwner : ME,
     paid: ev ? ev.paid.slice() : []
   };
+  F.g = nextGender();
   renderForm();
   el("dlg").showModal();
 }
@@ -766,7 +806,8 @@ el("f-types").addEventListener("click", e => {
   F.type = F.type === b.dataset.type ? "" : b.dataset.type;
   const preset = TYPE_PRESET[F.type];
   if (preset && (F.capAuto || (!F.capF && !F.capM))) { F.capF = preset[0]; F.capM = preset[1]; F.capAuto = true; }
-  renderTypes(); renderCaps(); renderPeople(); renderSettle();
+  F.g = nextGender();
+  renderTypes(); renderCaps(); renderPeople(); renderSettle(); renderGseg();
 });
 document.querySelector(".caps").addEventListener("click", e => {
   const b = e.target.closest("[data-cap]");
@@ -775,9 +816,24 @@ document.querySelector(".caps").addEventListener("click", e => {
   if (g === "F") F.capF = Math.max(0, Math.min(12, F.capF + d));
   else F.capM = Math.max(0, Math.min(12, F.capM + d));
   F.capAuto = false;
-  renderCaps(); renderPeople(); renderSettle();
+  F.g = nextGender();
+  renderCaps(); renderPeople(); renderSettle(); renderGseg();
 });
 el("f-add").addEventListener("click", addPerson);
+el("f-person").addEventListener("input", renderSuggest);
+document.querySelector(".gseg").addEventListener("click", e => {
+  const b = e.target.closest("[data-g]");
+  if (!b) return;
+  F.g = b.dataset.g;
+  renderGseg();
+});
+el("f-suggest").addEventListener("click", e => {
+  const b = e.target.closest("[data-sug]");
+  if (!b) return;
+  addName(b.dataset.sug, b.dataset.sg);
+  el("f-person").value = "";
+  renderSuggest();
+});
 el("f-person").addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); addPerson(); }
 });
@@ -798,7 +854,8 @@ el("f-people").addEventListener("click", e => {
     if (F.host === gone.name) F.host = "";
     if (F.owner === gone.name) F.owner = "";
   }
-  renderPeople(); renderRoles(); renderSettle();
+  F.g = nextGender();
+  renderPeople(); renderRoles(); renderSettle(); renderSuggest(); renderGseg();
 });
 el("f-host").addEventListener("click", e => {
   const b = e.target.closest("[data-host]");
