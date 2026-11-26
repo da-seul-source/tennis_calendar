@@ -545,8 +545,7 @@ function calendarHtml() {
     const cls = "d" + (w === 0 ? " su" : w === 6 ? " sa" : "") + (out ? " out" : "") + (key === tk ? " today" : "") + (key === selDate ? " sel" : "");
     const es = byDate(key);
     let chips = es.slice(0, 2).map(ev =>
-      '<span class="ec' + (key < tk ? " past" : "") + '" data-ev="' + esc(ev.id) + '"><span>' + esc(hour(ev.start)) + '</span><span>' + esc(ev.place) + '</span>' +
-      (ev.court ? '<span>' + esc(ev.court) + '</span>' : '') + '</span>').join("");
+      '<span class="ec' + (key < tk ? " past" : "") + '" data-ev="' + esc(ev.id) + '"><span>' + esc(hour(ev.start)) + '</span><span>' + esc(ev.place) + (ev.court ? ' ' + esc(ev.court) : '') + '</span></span>').join("");
     if (es.length > 2) chips += '<span class="more">+' + (es.length - 2) + '개</span>';
     g += '<button type="button" class="' + cls + '" data-day="' + key + '" aria-label="' + dateTitle(key) + (es.length ? ", 일정 " + es.length + "개" : "") + '"><span class="n">' + d.getDate() + '</span>' + chips + '</button>';
   }
