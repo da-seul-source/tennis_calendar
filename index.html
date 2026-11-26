@@ -194,27 +194,18 @@
   .opt.paid[aria-pressed="true"] { background: var(--tint); color: var(--tint-fg); }
   .opt.paid[aria-pressed="true"]::before { content: "✓ "; }
 
-  /* ── 다시 넣은 기능: 금액·성별 정원·대기 ── */
+  /* ── 금액·성별 정원 ── */
   .money { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--fg2); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .money.get { color: var(--tint-fg); }
   .r2 { display: flex; align-items: center; gap: 8px; }
   .memo { font-size: 12px; color: var(--fg2); white-space: pre-wrap; overflow-wrap: anywhere; }
-  .pp.wait { background: transparent; color: var(--fg2); box-shadow: inset 0 0 0 1px var(--line); border-style: dashed; }
-  .pp.wait b { font-weight: 500; color: var(--fg3); margin-right: 3px; }
   .caps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .capbox { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 4px 4px 4px 12px; border-radius: 12px; background: var(--soft); }
   .capbox > span { font-size: 13px; color: var(--fg2); }
   .capbox .stepper { gap: 2px; }
   .capbox .stepper button { width: 32px; height: 32px; background: #fff; }
   .capbox .stepper output { min-width: 36px; font-size: 14px; }
-  .person .g, .wrow .g { border: 0; background: #fff; height: 22px; min-width: 22px; padding: 0 6px; border-radius: 999px; font-size: 11px; color: var(--tint-fg); margin-left: 6px; }
-  .waits { display: grid; gap: 4px; padding: 8px 12px; border-radius: 12px; background: var(--soft); }
-  .waits .wl { font-size: 11px; color: var(--fg3); }
-  .wrow { display: flex; align-items: center; gap: 2px; font-size: 13px; color: var(--fg2); }
-  .wrow .no { width: 16px; font-size: 11px; color: var(--fg3); font-variant-numeric: tabular-nums; }
-  .wrow .nm { margin-right: auto; }
-  .wrow .g { color: var(--fg2); }
-  .wrow .rm { width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: var(--fg3); font-size: 13px; display: grid; place-items: center; }
+  .person .g { border: 0; background: #fff; height: 22px; min-width: 22px; padding: 0 6px; border-radius: 999px; font-size: 11px; color: var(--tint-fg); margin-left: 6px; }
   .opt .ball { display: inline-block; vertical-align: -3px; margin-right: 4px; }
   .addrow { grid-template-columns: 1fr auto auto; }
   .gseg { display: flex; background: var(--soft); border-radius: 12px; padding: 3px; }
@@ -282,7 +273,7 @@
           <div class="capbox"><span>여자</span><div class="stepper"><button type="button" data-cap="F-1" aria-label="여자 줄이기">−</button><output id="f-capf">0</output><button type="button" data-cap="F1" aria-label="여자 늘리기">+</button></div></div>
           <div class="capbox"><span>남자</span><div class="stepper"><button type="button" data-cap="M-1" aria-label="남자 줄이기">−</button><output id="f-capm">0</output><button type="button" data-cap="M1" aria-label="남자 늘리기">+</button></div></div>
         </div>
-        <small class="hint">둘 다 0이면 제한 없음. 성별 자리가 차면 그 성별은 신청 순서대로 대기로 들어가요.</small>
+        <small class="hint">둘 다 0이면 제한 없음. 남는 자리는 카드에 빈자리로 보여요.</small>
       </div>
       <div class="fld">
         <span class="lbl">참석자</span>
@@ -295,7 +286,6 @@
           <button type="button" class="btn" id="f-add">추가</button>
         </div>
         <div class="people" id="f-people"></div>
-        <div class="waits" id="f-waits" hidden></div>
         <small class="hint" id="f-people-hint">여/남을 누르면 바뀌어요.</small>
       </div>
 
@@ -419,21 +409,8 @@ function toast(msg, warn) {
 }
 function errText(e) { return (e && (e.message || String(e))) || "잠시 후 다시 시도하세요."; }
 
-/* 신청 순서대로 자리를 채우고, 넘치면 대기. 누가 빠지면 같은 성별의 다음 대기자가 저절로 올라온다.
-   성별 정원(capF/capM)이 있으면 여자는 여자 자리, 남자는 남자 자리. 성별 모르는 사람은 남은 자리 아무 데나.
-   둘 다 0 이면 제한 없음. */
-function withStatus(list, capF, capM) {
-  const cap = capF + capM;
-  let inF = 0, inM = 0;
-  return list.slice().sort((a, b) => (a.at || 0) - (b.at || 0)).map(p => {
-    let ok;
-    if (!cap) ok = true;
-    else if (p.gender === "F") { ok = inF < capF; if (ok) inF++; }
-    else if (p.gender === "M") { ok = inM < capM; if (ok) inM++; }
-    else { ok = inF < capF || inM < capM; if (ok) { if (inF < capF) inF++; else inM++; } }
-    return Object.assign({}, p, { wait: !ok });
-  });
-}
+/* 신청 순서대로 정렬 (개인 캘린더라 대기 없이 모두 참석) */
+function ordered(list) { return list.slice().sort((a, b) => (a.at || 0) - (b.at || 0)); }
 
 /* 정산: (코트비 + 캔볼 값) ÷ 확정 인원, 10원 단위 올림.
    캔볼 가져온 사람은 이미 낸 캔볼 값을 빼고 내며, 음수면 돌려받는다. */
@@ -452,7 +429,6 @@ function normalize(id, d) {
     .filter(p => p && str(p.name))
     .map(p => ({ id: p.id || uid(), name: str(p.name), gender: p.gender === "F" || p.gender === "M" ? p.gender : "", at: Number(p.at) || 0 }));
   const capF = num(d.capF), capM = num(d.capM);
-  const st = withStatus(parts, capF, capM);
   const ball = typeof d.ball === "boolean" ? d.ball : str(d.ballOwner) === ME;
   const ev = {
     id: id,
@@ -463,7 +439,7 @@ function normalize(id, d) {
     ball: ball, ballOwner: ball ? ME : str(d.ballOwner),
     host: str(d.host),
     participants: parts,
-    ins: st.filter(p => !p.wait), waits: st.filter(p => p.wait),
+    ins: ordered(parts),
     mine: typeof d.mine === "boolean" ? d.mine : str(d.host) === ME,
     paid: Array.isArray(d.paid) ? d.paid.map(str) : [],
     myPaid: !!d.myPaid,
@@ -509,7 +485,6 @@ function card(ev) {
   const cap = ev.capF + ev.capM;
   const left = cap ? Math.max(0, cap - ev.names.length) : 0;
   if (!past) for (let i = 0; i < left; i++) ppl += '<span class="pp open">빈자리</span>';
-  ppl += ev.waits.map((p, i) => '<span class="pp wait"><b>대기' + (i + 1) + '</b>' + esc(p.name) + '</span>').join("");
 
   // 금액: 내 코트면 1인 금액, 남 코트면 내가 낼 몫 (캔볼 가져가면 그만큼 빼고)
   let money = "";
@@ -659,8 +634,7 @@ el("fab").addEventListener("click", () => openForm(selDate));
 let editingId = null;
 let F = null;   // 폼 상태: { type, capF, capM, capAuto, people:[{id,name,gender,at}], g, host, owner, paid:[] }
 
-function formStatus() { return withStatus(F.people, F.capF, F.capM); }
-function formIns() { return formStatus().filter(p => !p.wait).map(p => p.name); }
+function formIns() { return ordered(F.people).map(p => p.name); }
 
 function renderTypes() {
   el("f-types").innerHTML = TYPES.map(t =>
@@ -668,14 +642,10 @@ function renderTypes() {
 }
 function renderCaps() { el("f-capf").textContent = F.capF; el("f-capm").textContent = F.capM; }
 function renderPeople() {
-  const st = formStatus(), ins = st.filter(p => !p.wait), waits = st.filter(p => p.wait);
+  const ins = ordered(F.people);
   const g = p => '<button type="button" class="g" data-gt="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 성별 바꾸기">' + (p.gender === "M" ? "남" : "여") + '</button>';
   const x = p => '<button type="button" class="rm" data-rm="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 빼기">✕</button>';
   el("f-people").innerHTML = ins.map(p => '<span class="person">' + esc(p.name) + g(p) + x(p) + '</span>').join("");
-  // 대기자는 칩이 아니라 아래에 순번 목록으로 따로
-  el("f-waits").hidden = !waits.length;
-  el("f-waits").innerHTML = '<span class="wl">대기 ' + waits.length + '명, 자리가 나면 순서대로 올라가요</span>' +
-    waits.map((p, i) => '<div class="wrow"><span class="no">' + (i + 1) + '</span><span class="nm">' + esc(p.name) + '</span>' + g(p) + x(p) + '</div>').join("");
 }
 /* 예약자·캔볼 가져오는 사람: 나 + 참석자 중에서 하나 (다시 누르면 해제) */
 function pickChips(boxId, key, value, icon) {
@@ -703,7 +673,7 @@ function renderSettle() {
     const d = s.due(owner);
     h += '<div class="note">' + esc(owner) + '은(는) 캔볼 값을 빼고 ' + (d < 0 ? won(-d) + " 돌려받아요." : won(d) + " 내요.") + '</div>';
   }
-  h += '<div class="note">확정 인원으로 나눠 10원 단위로 올려요. 대기자는 빠져요.</div>';
+  h += '<div class="note">참석 인원으로 나눠 10원 단위로 올려요.</div>';
   el("f-ledger").innerHTML = h;
 
   // 내 코트: 사람별 받을 돈 + 받음 체크 / 남 코트: 내 정산 완료 스위치
@@ -735,7 +705,7 @@ function renderGseg() {
 /* 새로 넣는 사람 성별: 남은 자리에 맞춘다 (여자 자리가 남으면 여, 아니면 남) */
 function nextGender() {
   if (!F.capF && !F.capM) return "F";
-  const st = formStatus().filter(p => !p.wait);
+  const st = F.people;
   const f = st.filter(p => p.gender === "F").length, m = st.filter(p => p.gender === "M").length;
   if (f < F.capF) return "F";
   if (m < F.capM) return "M";
@@ -834,7 +804,6 @@ function onPeopleClick(e) {
   renderPeople(); renderRoles(); renderSettle(); renderGseg();
 }
 el("f-people").addEventListener("click", onPeopleClick);
-el("f-waits").addEventListener("click", onPeopleClick);
 el("f-host").addEventListener("click", e => {
   const b = e.target.closest("[data-host]");
   if (!b) return;
