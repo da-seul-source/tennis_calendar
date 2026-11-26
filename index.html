@@ -198,6 +198,8 @@
   .money { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--fg2); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .money.get { color: var(--tint-fg); }
   .r2 { display: flex; align-items: center; gap: 8px; }
+  .short { font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 6px; border-radius: 999px; color: var(--sun); box-shadow: inset 0 0 0 1px currentColor; white-space: nowrap; }
+  .person.open { background: transparent; color: var(--fg3); box-shadow: inset 0 0 0 1px var(--line); padding: 4px 12px; font-weight: 400; }
   .memo { font-size: 12px; color: var(--fg2); white-space: pre-wrap; overflow-wrap: anywhere; }
   .caps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .capbox { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 4px 4px 4px 12px; border-radius: 12px; background: var(--soft); }
@@ -364,9 +366,10 @@ const DOW = ["일", "월", "화", "수", "목", "금", "토"];
 const TYPES = ["혼복", "여복", "남복", "단식", "랠리"];
 const TYPE_PRESET = { "혼복": [2, 2], "여복": [4, 0], "남복": [0, 4] };   // 고르면 여/남 인원을 채워 준다
 let events = [];
-let today = new Date();
-let view = { y: today.getFullYear(), m: today.getMonth() };
-let selDate = ymd(today);
+/* '오늘'은 폰 설정과 상관없이 한국 시간으로 */
+const KST = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" });
+let selDate = todayKey();
+let view = { y: +selDate.slice(0, 4), m: +selDate.slice(5, 7) - 1 };
 let mode = "cal";
 let showPast = false;
 
@@ -374,7 +377,7 @@ let showPast = false;
 function pad(n) { return (n < 10 ? "0" : "") + n; }
 function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
 function parse(key) { const p = key.split("-"); return new Date(+p[0], +p[1] - 1, +p[2], 12); }
-function todayKey() { return ymd(new Date()); }
+function todayKey() { return KST.format(new Date()); }
 function dayDiff(key) { return Math.round((parse(key) - parse(todayKey())) / 864e5); }
 function rel(key, withPast) {
   const n = dayDiff(key);
@@ -502,6 +505,7 @@ function card(ev) {
     '<div class="hd"><div class="r1"><span class="court">' + esc(title) + '</span>' +
     (ev.type ? '<span class="type">' + esc(ev.type) + '</span>' : '') +
     (ev.ball ? ballSvg("내가 캔볼 챙김") : '') +
+    (!past && left > 0 ? '<span class="short">' + left + '명 부족</span>' : '') +
     '<span class="stat">' + settle + '</span></div>' +
     '<div class="r2"><span class="time">' + esc(ev.start || "--:--") + ' – ' + esc(ev.end || "--:--") + '</span>' + money + '</div></div>' +
     (ppl ? '<div class="ppl">' + ppl + '</div>' : '') +
@@ -575,7 +579,7 @@ el("view").addEventListener("click", e => {
   const navB = t.closest("[data-nav]");
   if (navB) {
     const n = +navB.dataset.nav;
-    if (n === 0) { today = new Date(); view = { y: today.getFullYear(), m: today.getMonth() }; selDate = ymd(today); }
+    if (n === 0) { selDate = todayKey(); view = { y: +selDate.slice(0, 4), m: +selDate.slice(5, 7) - 1 }; }
     else {
       view.m += n;
       if (view.m < 0) { view.m = 11; view.y--; }
@@ -645,7 +649,9 @@ function renderPeople() {
   const ins = ordered(F.people);
   const g = p => '<button type="button" class="g" data-gt="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 성별 바꾸기">' + (p.gender === "M" ? "남" : "여") + '</button>';
   const x = p => '<button type="button" class="rm" data-rm="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 빼기">✕</button>';
-  el("f-people").innerHTML = ins.map(p => '<span class="person">' + esc(p.name) + g(p) + x(p) + '</span>').join("");
+  const open = F.capF + F.capM ? Math.max(0, F.capF + F.capM - ins.length) : 0;
+  el("f-people").innerHTML = ins.map(p => '<span class="person">' + esc(p.name) + g(p) + x(p) + '</span>').join("") +
+    '<span class="person open">빈자리</span>'.repeat(open);
 }
 /* 예약자·캔볼 가져오는 사람: 나 + 참석자 중에서 하나 (다시 누르면 해제) */
 function pickChips(boxId, key, value, icon) {
