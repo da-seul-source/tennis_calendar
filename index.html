@@ -177,7 +177,7 @@
   .stepper output { min-width: 56px; text-align: center; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
   .people { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .person { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; font-weight: 500; padding: 4px 4px 4px 12px; border-radius: 999px; background: var(--accent); color: var(--on); }
+  .person { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; font-weight: 500; padding: 4px 4px 4px 12px; border-radius: 999px; background: var(--tint); color: var(--tint-fg); }
   .person button { width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: var(--accent-text); font-size: 13px; display: grid; place-items: center; }
   .addrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 
@@ -207,18 +207,19 @@
   .capbox .stepper { gap: 2px; }
   .capbox .stepper button { width: 32px; height: 32px; background: #fff; }
   .capbox .stepper output { min-width: 36px; font-size: 14px; }
-  .person .g { border: 0; background: #fff; height: 22px; min-width: 22px; padding: 0 6px; border-radius: 999px; font-size: 11px; color: var(--on); margin-left: 6px; }
-  .person.wait { background: transparent; color: var(--fg2); box-shadow: inset 0 0 0 1px var(--line); }
-  .person.wait button { color: var(--fg3); }
-  .person.wait .g { background: var(--soft); }
+  .person .g, .wrow .g { border: 0; background: #fff; height: 22px; min-width: 22px; padding: 0 6px; border-radius: 999px; font-size: 11px; color: var(--tint-fg); margin-left: 6px; }
+  .waits { display: grid; gap: 4px; padding: 8px 12px; border-radius: 12px; background: var(--soft); }
+  .waits .wl { font-size: 11px; color: var(--fg3); }
+  .wrow { display: flex; align-items: center; gap: 2px; font-size: 13px; color: var(--fg2); }
+  .wrow .no { width: 16px; font-size: 11px; color: var(--fg3); font-variant-numeric: tabular-nums; }
+  .wrow .nm { margin-right: auto; }
+  .wrow .g { color: var(--fg2); }
+  .wrow .rm { width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: var(--fg3); font-size: 13px; display: grid; place-items: center; }
   .opt .ball { display: inline-block; vertical-align: -3px; margin-right: 4px; }
-  .person.wait::before { content: "대기"; font-size: 11px; color: var(--fg3); margin-right: 4px; }
   .addrow { grid-template-columns: 1fr auto auto; }
   .gseg { display: flex; background: var(--soft); border-radius: 12px; padding: 3px; }
   .gseg button { border: 0; background: transparent; width: 38px; border-radius: 9px; font-size: 13px; color: var(--fg2); }
   .gseg button[aria-pressed="true"] { background: #fff; color: var(--fg); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
-  .sug { border: 0; height: 30px; padding: 0 12px; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; color: var(--fg); }
-  .sug small { font-size: 11px; color: var(--fg3); margin-left: 4px; }
   input[inputmode="numeric"] { font-variant-numeric: tabular-nums; }
   .sub { display: grid; gap: 6px; }
   .ledger { display: grid; gap: 4px; padding: 12px; border-radius: 12px; background: var(--soft); font-size: 13px; }
@@ -286,15 +287,15 @@
       <div class="fld">
         <span class="lbl">참석자</span>
         <div class="addrow">
-          <input id="f-person" type="text" placeholder="이름 검색·추가" maxlength="20" autocomplete="off" enterkeyhint="done">
+          <input id="f-person" type="text" placeholder="이름 추가" maxlength="20" autocomplete="off" enterkeyhint="done">
           <div class="gseg" role="group" aria-label="성별">
             <button type="button" data-g="F" aria-pressed="true">여</button>
             <button type="button" data-g="M" aria-pressed="false">남</button>
           </div>
           <button type="button" class="btn" id="f-add">추가</button>
         </div>
-        <div class="chips" id="f-suggest"></div>
         <div class="people" id="f-people"></div>
+        <div class="waits" id="f-waits" hidden></div>
         <small class="hint" id="f-people-hint">여/남을 누르면 바뀌어요.</small>
       </div>
 
@@ -667,10 +668,14 @@ function renderTypes() {
 }
 function renderCaps() { el("f-capf").textContent = F.capF; el("f-capm").textContent = F.capM; }
 function renderPeople() {
-  el("f-people").innerHTML = formStatus().map(p =>
-    '<span class="person' + (p.wait ? " wait" : "") + '">' + esc(p.name) +
-    '<button type="button" class="g" data-gt="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 성별 바꾸기">' + (p.gender === "M" ? "남" : "여") + '</button>' +
-    '<button type="button" data-rm="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 빼기">✕</button></span>').join("");
+  const st = formStatus(), ins = st.filter(p => !p.wait), waits = st.filter(p => p.wait);
+  const g = p => '<button type="button" class="g" data-gt="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 성별 바꾸기">' + (p.gender === "M" ? "남" : "여") + '</button>';
+  const x = p => '<button type="button" class="rm" data-rm="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 빼기">✕</button>';
+  el("f-people").innerHTML = ins.map(p => '<span class="person">' + esc(p.name) + g(p) + x(p) + '</span>').join("");
+  // 대기자는 칩이 아니라 아래에 순번 목록으로 따로
+  el("f-waits").hidden = !waits.length;
+  el("f-waits").innerHTML = '<span class="wl">대기 ' + waits.length + '명, 자리가 나면 순서대로 올라가요</span>' +
+    waits.map((p, i) => '<div class="wrow"><span class="no">' + (i + 1) + '</span><span class="nm">' + esc(p.name) + '</span>' + g(p) + x(p) + '</div>').join("");
 }
 /* 예약자·캔볼 가져오는 사람: 나 + 참석자 중에서 하나 (다시 누르면 해제) */
 function pickChips(boxId, key, value, icon) {
@@ -721,28 +726,8 @@ function renderSettle() {
   // 보여 줄 게 없으면 정산 칸째로 숨긴다
   el("f-settle").hidden = el("f-ledger").hidden && el("f-payrows").hidden && el("f-mypaid-row").hidden;
 }
-function renderForm() { renderTypes(); renderCaps(); renderPeople(); renderRoles(); renderSettle(); renderSuggest(); renderGseg(); }
+function renderForm() { renderTypes(); renderCaps(); renderPeople(); renderRoles(); renderSettle(); renderGseg(); }
 
-/* 예전 일정에 나온 사람들 (이름 → 마지막으로 쓴 성별), 자주 나온 순 */
-function knownPeople() {
-  const m = {};
-  events.forEach(ev => ev.participants.forEach(p => {
-    if (p.name === ME) return;
-    const k = m[p.name] || (m[p.name] = { name: p.name, gender: "", n: 0, last: "" });
-    k.n++;
-    if (p.gender && ev.date >= k.last) { k.gender = p.gender; k.last = ev.date; }
-  }));
-  return Object.values(m).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, "ko"));
-}
-function renderSuggest() {
-  const q = str(el("f-person").value);
-  const have = F.people.map(p => p.name);
-  const list = knownPeople().filter(k => have.indexOf(k.name) < 0 && (!q || k.name.indexOf(q) >= 0)).slice(0, 15);
-  el("f-suggest").hidden = !list.length;
-  el("f-suggest").innerHTML = list.map(k =>
-    '<button type="button" class="sug" data-sug="' + esc(k.name) + '" data-sg="' + (k.gender || "") + '">' + esc(k.name) +
-    (k.gender ? '<small>' + (k.gender === "M" ? "남" : "여") + '</small>' : '') + '</button>').join("");
-}
 function renderGseg() {
   document.querySelectorAll(".gseg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.g === F.g)));
 }
@@ -767,7 +752,6 @@ function addPerson() {
   if (!n) return;
   addName(n, F.g);
   inp.value = "";
-  renderSuggest();
   inp.focus();
 }
 
@@ -820,24 +804,16 @@ document.querySelector(".caps").addEventListener("click", e => {
   renderCaps(); renderPeople(); renderSettle(); renderGseg();
 });
 el("f-add").addEventListener("click", addPerson);
-el("f-person").addEventListener("input", renderSuggest);
 document.querySelector(".gseg").addEventListener("click", e => {
   const b = e.target.closest("[data-g]");
   if (!b) return;
   F.g = b.dataset.g;
   renderGseg();
 });
-el("f-suggest").addEventListener("click", e => {
-  const b = e.target.closest("[data-sug]");
-  if (!b) return;
-  addName(b.dataset.sug, b.dataset.sg);
-  el("f-person").value = "";
-  renderSuggest();
-});
 el("f-person").addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); addPerson(); }
 });
-el("f-people").addEventListener("click", e => {
+function onPeopleClick(e) {
   const gt = e.target.closest("[data-gt]");
   if (gt) {
     const p = F.people.find(x => x.id === gt.dataset.gt);
@@ -855,8 +831,10 @@ el("f-people").addEventListener("click", e => {
     if (F.owner === gone.name) F.owner = "";
   }
   F.g = nextGender();
-  renderPeople(); renderRoles(); renderSettle(); renderSuggest(); renderGseg();
-});
+  renderPeople(); renderRoles(); renderSettle(); renderGseg();
+}
+el("f-people").addEventListener("click", onPeopleClick);
+el("f-waits").addEventListener("click", onPeopleClick);
 el("f-host").addEventListener("click", e => {
   const b = e.target.closest("[data-host]");
   if (!b) return;
