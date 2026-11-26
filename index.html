@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🎾 테니스 캘린더</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 폰트는 화면 그리기를 막지 않게 뒤에서 받는다 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"></noscript>
+<style>
+  :root {
+    --page: #F2FAF6;
+    --surface: #FFFFFF;
+    --soft: #EAF7F1;
+    --soft-2: #DDF0E7;
+    --border: #DCEDE5;
+    --border-mid: #C6E3D6;
+    --fg: #2C3B36;
+    --fg-2: #5D7A70;
+    --fg-3: #94AFA5;
+    --mint: #2FBF9B;
+    --mint-deep: #189A7A;
+    --mint-soft: #DFF6EE;
+    --lime: #C9E85C;
+    --lime-soft: #F2FAD4;
+    --lime-fg: #6F8319;
+    --coral: #FF7E6B;
+    --coral-soft: #FFEDE9;
+    --sky: #5FB2F2;
+    --sky-soft: #E6F3FE;
+    --on-mint: #FFFFFF;
+    --ring: rgba(47, 191, 155, .25);
+    --sh-1: 0 2px 6px rgba(44, 59, 54, .05);
+    --sh-2: 0 6px 16px -4px rgba(44, 59, 54, .12);
+    --sh-3: 0 10px 24px -6px rgba(47, 191, 155, .35);
+    --sh-modal: 0 24px 64px -16px rgba(44, 59, 54, .32);
+    --scrim: rgba(44, 59, 54, .38);
+    --display: "Noto Sans KR", -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif;
+    --sans: "Noto Sans KR", -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif;
+    --r: 18px;
+    --r-sm: 12px;
+    --r-lg: 26px;
+    --pill: 999px;
+    --s1: 4px;
+    --s2: 8px;
+    --s3: 12px;
+    --s4: 16px;
+    --s5: 24px;
+    --s6: 36px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #101A17;
+      --surface: #182722;
+      --soft: #1E332C;
+      --soft-2: #254036;
+      --border: #264037;
+      --border-mid: #33574A;
+      --fg: #EAF6F1;
+      --fg-2: #A5C4B9;
+      --fg-3: #6F9287;
+      --mint: #45D6B0;
+      --mint-deep: #6FE3C4;
+      --mint-soft: #1B3B33;
+      --lime: #D7F06A;
+      --lime-soft: #2E3A16;
+      --lime-fg: #D7F06A;
+      --coral: #FF9686;
+      --coral-soft: #3B241F;
+      --sky: #7CC3FA;
+      --sky-soft: #1B2F3D;
+      --on-mint: #0C1F1A;
+      --ring: rgba(69, 214, 176, .3);
+      --sh-1: 0 2px 6px rgba(0, 0, 0, .35);
+      --sh-2: 0 8px 18px -4px rgba(0, 0, 0, .5);
+      --sh-3: 0 10px 26px -6px rgba(69, 214, 176, .4);
+      --sh-modal: 0 28px 70px -18px rgba(0, 0, 0, .8);
+      --scrim: rgba(4, 12, 10, .66);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #101A17;
+    --surface: #182722;
+    --soft: #1E332C;
+    --soft-2: #254036;
+    --border: #264037;
+    --border-mid: #33574A;
+    --fg: #EAF6F1;
+    --fg-2: #A5C4B9;
+    --fg-3: #6F9287;
+    --mint: #45D6B0;
+    --mint-deep: #6FE3C4;
+    --mint-soft: #1B3B33;
+    --lime: #D7F06A;
+    --lime-soft: #2E3A16;
+    --lime-fg: #D7F06A;
+    --coral: #FF9686;
+    --coral-soft: #3B241F;
+    --sky: #7CC3FA;
+    --sky-soft: #1B2F3D;
+    --on-mint: #0C1F1A;
+    --ring: rgba(69, 214, 176, .3);
+    --sh-1: 0 2px 6px rgba(0, 0, 0, .35);
+    --sh-2: 0 8px 18px -4px rgba(0, 0, 0, .5);
+    --sh-3: 0 10px 26px -6px rgba(69, 214, 176, .4);
+    --sh-modal: 0 28px 70px -18px rgba(0, 0, 0, .8);
+    --scrim: rgba(4, 12, 10, .66);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  .wrap {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: var(--s5) 128px;
+  }
+
+  /* ---------- top ---------- */
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2) var(--s4);
+    padding-bottom: var(--s4);
+  }
+  .brand h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    color: var(--fg);
+  }
+  .eyebrow { display: none; }
+  .hint {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--fg-2);
+    background: var(--surface);
+    border-radius: var(--pill);
+    padding: 6px 14px;
+    box-shadow: var(--sh-1);
+  }
+
+  /* ---------- month nav ---------- */
+  .monthbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+    margin-bottom: var(--s3);
+    padding-inline: 4px;
+  }
+  .month-title {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .month-title .yr { font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--fg-3); }
+  .nav-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: var(--surface);
+    border-radius: var(--pill);
+    box-shadow: var(--sh-1);
+  }
+  .loading { margin-left: auto; margin-right: var(--s3); font-size: 12px; color: var(--mint-deep); font-weight: 500; }
+
+  /* ---------- buttons ---------- */
+  button {
+    font-family: var(--sans);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--fg);
+    cursor: pointer;
+    border-radius: var(--pill);
+    border: 1.5px solid var(--border-mid);
+    background: var(--surface);
+    padding: 8px 16px;
+    transition: transform .12s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease;
+  }
+  button:hover { background: var(--soft); border-color: var(--mint); }
+  button:active { transform: scale(.96); }
+  button:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--ring); }
+  button[disabled] { opacity: .5; cursor: default; transform: none; }
+  button[disabled]:hover { background: var(--surface); border-color: var(--border-mid); }
+  .btn-primary {
+    background: var(--mint);
+    border-color: var(--mint);
+    color: var(--on-mint);
+    box-shadow: 0 4px 10px -3px rgba(47, 191, 155, .5);
+  }
+  .btn-primary:hover { background: var(--mint-deep); border-color: var(--mint-deep); }
+  .btn-sm { padding: 6px 13px; font-size: 12.5px; }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--fg-2); box-shadow: none; }
+  .btn-ghost:hover { background: var(--soft); border-color: transparent; }
+  .btn-danger { color: var(--coral); }
+  .btn-danger:hover { background: var(--coral-soft); border-color: transparent; }
+  .nav-group button {
+    border: none;
+    background: transparent;
+    padding: 5px 12px;
+    font-size: 13px;
+    color: var(--fg-2);
+    box-shadow: none;
+  }
+  .nav-group button:hover { background: var(--mint-soft); color: var(--mint-deep); }
+  .icon-btn { width: 30px; padding: 0; display: grid; place-items: center; font-size: 16px; line-height: 1; }
+
+  /* ---------- calendar ---------- */
+  .calendar {
+    background: var(--surface);
+    border-radius: var(--r);
+    padding: var(--s2);
+    box-shadow: var(--sh-2);
+  }
+  .dow {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    padding: 2px 0 6px;
+  }
+  .dow span {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--fg-3);
+  }
+  .dow span:first-child { color: var(--coral); }
+  .dow span:last-child { color: var(--sky); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .cell {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    min-height: 110px;
+    background: var(--soft);
+    border: 2px solid transparent;
+    border-radius: 14px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    transition: background .14s ease, border-color .14s ease;
+  }
+  .cell:hover { background: var(--soft-2); }
+  .cell.out { background: transparent; }
+  .cell.out .daynum { color: var(--fg-3); opacity: .45; }
+  .cell.sel { background: var(--mint-soft); border-color: var(--mint); }
+  .daynum {
+    align-self: flex-start;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display);
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--fg-2);
+    background: transparent;
+    border: none;
+    border-radius: var(--pill);
+    box-shadow: none;
+  }
+  .daynum:hover { background: var(--mint); color: var(--on-mint); border: none; transform: none; }
+  .cell.sun .daynum { color: var(--coral); }
+  .cell.sat .daynum { color: var(--sky); }
+  .cell.sun .daynum:hover, .cell.sat .daynum:hover { color: var(--on-mint); }
+  .cell.today .daynum { background: var(--lime); color: var(--lime-fg); }
+  :root[data-theme="dark"] .cell.today .daynum { color: #26310D; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .cell.today .daynum { color: #26310D; }
+  }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
+    padding: 4px 8px;
+    border: none;
+    border-radius: var(--pill);
+    background: var(--surface);
+    color: var(--mint-deep);
+    box-shadow: var(--sh-1);
+  }
+  .chip:hover { background: var(--mint); color: var(--on-mint); border: none; }
+  .chip:hover .cnt { color: var(--on-mint); }
+  .chip .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip .cnt { flex: 0 0 auto; font-size: 11px; font-weight: 700; color: var(--fg-3); }
+  @media (max-width: 720px) {
+    .cell { min-height: 82px; padding: 2px; border-radius: 12px; gap: 2px; }
+    .daynum { min-width: 21px; height: 21px; font-size: 12px; padding: 0 3px; }
+    .chip {
+      font-size: 8.5px;
+      font-weight: 700;
+      line-height: 1.25;
+      padding: 3px 3px;
+      border-radius: 8px;
+      align-items: flex-start;
+    }
+    .chip .cnt { display: none; }
+    .chip .nm {
+      white-space: normal;
+      word-break: break-all;
+      letter-spacing: -.04em;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .grid { gap: 3px; }
+  }
+
+  /* ---------- floating action ---------- */
+  /* 페이지 아래쪽을 살짝 흐려서 버튼이 떠 있는 것처럼 보이게 */
+  .fade {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 140px;
+    background: linear-gradient(to top, var(--page) 45%, transparent);
+    pointer-events: none;
+    z-index: 30;
+  }
+  .fab {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px 34px;
+    border: none;
+    border-radius: var(--pill);
+    background: var(--mint);
+    color: var(--on-mint);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 16px;
+    box-shadow: 0 10px 28px -8px rgba(47, 191, 155, .65), 0 3px 10px rgba(44, 59, 54, .14);
+  }
+  .fab:hover { background: var(--mint-deep); border: none; transform: translateX(-50%) translateY(-2px); }
+  .fab:active { transform: translateX(-50%) scale(.97); }
+  .fab .plus { font-size: 20px; line-height: 1; }
+  .fab .when { display: none; }
+  /* 좁은 화면에서는 화면 폭을 채우는 주 버튼으로 */
+  @media (max-width: 520px) {
+    .fab {
+      left: 16px;
+      right: 16px;
+      transform: none;
+      padding: 16px;
+      border-radius: 18px;
+      font-size: 16px;
+      bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    }
+    .fab:hover, .fab:active { transform: none; }
+  }
+
+  /* ---------- dialogs ---------- */
+  dialog {
+    padding: 0;
+    border: none;
+    background: transparent;
+    width: min(520px, calc(100vw - 24px));
+    max-width: none;
+    max-height: none;
+    overflow: visible;   /* 스크롤은 안쪽 내용 한 곳에서만 */
+    color: var(--fg);
+  }
+  dialog::backdrop { background: var(--scrim); backdrop-filter: blur(4px); }
+  .sheet {
+    display: flex;
+    flex-direction: column;
+    /* 실제로 보이는 화면 높이(--app-h, 스크립트가 잰다)에서 위아래 여백을 뺀 만큼까지만.
+       넘치는 내용은 팝업 안쪽에서만 스크롤된다 */
+    max-height: min(calc(100vh - 32px), 880px);
+    max-height: min(calc(var(--app-h, 100dvh) - 32px), 880px);
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-modal);
+    overflow: hidden;
+  }
+  .sheet-head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s3);
+    padding: var(--s5) var(--s5) var(--s3);
+  }
+  .sheet-head h2 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+  }
+  .sheet-head .when { font-size: 13px; color: var(--fg-2); font-weight: 500; }
+  .sheet-head .close {
+    margin-left: auto;
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
+    padding: 0;
+    border: none;
+    background: var(--soft);
+    border-radius: var(--pill);
+    font-size: 15px;
+    line-height: 1;
+    color: var(--fg-2);
+    box-shadow: none;
+  }
+  .sheet-head .close:hover { background: var(--coral-soft); color: var(--coral); border: none; }
+  .sheet-body {
+    padding: var(--s2) var(--s5) var(--s5);
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s5);
+  }
+  .sheet .sheet-body > * { flex: 0 0 auto; }
+  .group { display: flex; flex-direction: column; gap: var(--s2); }
+  .group-title {
+    margin: 0 0 2px;
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--fg);
+  }
+  .sheet-foot {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s3) var(--s5);
+    background: var(--soft);
+  }
+  .sheet-foot .spacer { flex: 1; }
+
+  /* ---------- detail ---------- */
+  .ev-title { display: flex; align-items: baseline; gap: var(--s2); flex-wrap: wrap; }
+  .ev-court {
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: var(--pill);
+    background: var(--sky-soft);
+    color: var(--sky);
+  }
+  .ev-time { display: flex; flex-wrap: wrap; gap: 2px var(--s3); font-size: 13px; color: var(--fg-2); }
+  .ev-memo { margin: 0; font-size: 13px; color: var(--fg-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* ---------- facts ---------- */
+  .facts {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: var(--s2) var(--s3);
+    font-size: 13.5px;
+    align-items: baseline;
+    background: var(--soft);
+    border-radius: var(--r-sm);
+    padding: var(--s3) var(--s4);
+  }
+  .facts dt { font-size: 12.5px; font-weight: 600; color: var(--fg-3); white-space: nowrap; }
+  .facts dd { margin: 0; min-width: 0; font-weight: 500; overflow-wrap: anywhere; }
+  .facts dd.memo { white-space: pre-wrap; color: var(--fg-2); font-weight: 400; }
+  .dim { color: var(--fg-3); font-weight: 400; }
+
+  /* ---------- sections ---------- */
+  .sec { display: flex; flex-direction: column; gap: var(--s3); }
+  .sec > form.card { margin-top: var(--s1); }
+  .sec-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--fg-3);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .sec-label.lead {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--fg);
+  }
+  .sec-label .count {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--on-mint);
+    background: var(--mint);
+    border-radius: var(--pill);
+    min-width: 22px;
+    padding: 1px 8px;
+    text-align: center;
+  }
+
+  /* ---------- roster ---------- */
+  .roster { display: flex; flex-direction: column; gap: var(--s2); }
+  .who {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    padding: 11px var(--s4);
+    background: var(--soft);
+    border-radius: var(--r-sm);
+    font-size: 14px;
+  }
+  .who .nm { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .who .tag { flex: 0 0 auto; }
+  .tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: var(--pill);
+    background: var(--sky-soft);
+    color: var(--sky);
+  }
+  .tag.ball { background: var(--lime-soft); color: var(--lime-fg); }
+  .tag.f { background: var(--coral-soft); color: var(--coral); }
+  .tag.m { background: var(--sky-soft); color: var(--sky); }
+  .tag.guest { background: var(--soft-2); color: var(--fg-2); }
+  .ev-type {
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: var(--pill);
+    background: var(--lime-soft);
+    color: var(--lime-fg);
+  }
+  .chip .gt { font-weight: 800; color: var(--lime-fg); }
+  .chip:hover .gt { color: var(--on-mint); }
+  /* 여/남 고르는 두 칸짜리 버튼 */
+  .seg { display: inline-flex; flex: 0 0 auto; padding: 3px; gap: 3px; border-radius: var(--pill); background: var(--surface); border: 1.5px solid var(--border-mid); }
+  .seg label { position: relative; cursor: pointer; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; width: auto; }
+  .seg span { display: inline-block; padding: 6px 14px; border-radius: var(--pill); font-size: 13px; font-weight: 700; color: var(--fg-2); }
+  .seg input:checked + span.f { background: var(--coral); color: #fff; }
+  .seg input:checked + span.m { background: var(--sky); color: #fff; }
+  .seg input:focus-visible + span { box-shadow: 0 0 0 3px var(--ring); }
+  .who .due { margin-left: auto; font-size: 13.5px; font-weight: 700; color: var(--fg); }
+  .who .due.refund { color: var(--mint-deep); }
+  .who.wait { background: transparent; border: 1.5px dashed var(--border-mid); }
+  .who.wait .nm { color: var(--fg-2); }
+  .who .ord {
+    flex: 0 0 auto;
+    min-width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    border-radius: var(--pill);
+    background: var(--soft-2);
+    color: var(--fg-2);
+  }
+  .who .due.wait { color: var(--fg-3); font-weight: 600; }
+  .sub-label { font-size: 12px; font-weight: 700; color: var(--fg-3); margin-top: var(--s1); }
+  .x {
+    border: none;
+    background: none;
+    color: var(--fg-3);
+    padding: 2px 5px;
+    line-height: 1;
+    font-size: 15px;
+    border-radius: var(--pill);
+    box-shadow: none;
+  }
+  .x:hover { color: var(--coral); background: var(--coral-soft); border: none; }
+
+  /* ---------- 비용 내역 ---------- */
+  .ledger { display: flex; flex-direction: column; }
+  .sums { display: flex; flex-direction: column; }
+  .sum {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s3);
+    padding: 5px 2px;
+    font-size: 13px;
+    color: var(--fg-2);
+  }
+  .sum > span { color: var(--fg-3); }
+  .sum > b { font-weight: 600; }
+  .sum.total { border-top: 1.5px dashed var(--border-mid); margin-top: 4px; padding-top: 9px; }
+  .sum.total > span { color: var(--fg-2); font-weight: 600; }
+  .sum.total > b { color: var(--mint-deep); font-weight: 700; font-size: 14.5px; }
+
+  /* ---------- 빠른 추가 ---------- */
+  .quickadd { display: flex; flex-wrap: wrap; gap: 7px; }
+  .pick {
+    padding: 7px 15px;
+    border-radius: var(--pill);
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--surface);
+    border: 1.5px solid var(--border-mid);
+  }
+  .pick:hover { background: var(--mint-soft); border-color: var(--mint); color: var(--mint-deep); }
+  .pick .sign { color: var(--mint); margin-right: 5px; font-weight: 700; }
+  .pick[disabled] { background: var(--soft); border-color: transparent; color: var(--fg-3); }
+  .pick[disabled] .sign { color: var(--mint); }
+
+  /* ---------- forms ---------- */
+  .row { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: flex-end; }
+  .row > * { min-width: 0; }
+  .row > .push { margin-left: auto; }
+  .field { display: flex; flex-direction: column; gap: 5px; flex: 0 0 auto; min-width: 0; }
+  .row > .field { flex: 1 1 130px; }
+  .row > .field.grow { flex: 1 1 150px; }
+  .field > label { font-size: 12px; font-weight: 700; color: var(--fg-3); padding-left: 4px; }
+  input, select, textarea {
+    font-family: var(--sans);
+    font-size: 13.5px;
+    color: var(--fg);
+    background: var(--surface);
+    border: 1.5px solid var(--border-mid);
+    border-radius: var(--r-sm);
+    padding: 9px 12px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    transition: border-color .14s ease, box-shadow .14s ease;
+  }
+  /* iOS 의 날짜·시간 위젯은 제 폭을 고집해서 칸 밖으로 삐져나간다 */
+  input[type="date"], input[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 38px;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value { text-align: left; }
+  input::placeholder, textarea::placeholder { color: var(--fg-3); }
+  textarea { resize: vertical; min-height: 58px; line-height: 1.5; }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--mint);
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+  form.card {
+    background: var(--soft);
+    border-radius: var(--r-sm);
+    padding: var(--s4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+  form.card h4 { margin: 0; font-size: 13.5px; font-weight: 700; }
+  .form-actions { display: flex; align-items: center; gap: var(--s3); justify-content: flex-end; }
+  .form-actions .msg { margin: 0; margin-right: auto; text-align: left; }
+
+  /* ---------- comments ---------- */
+  .cmt-list { display: flex; flex-direction: column; gap: var(--s2); }
+  .cmt { font-size: 13.5px; background: var(--soft); border-radius: var(--r-sm); padding: 10px var(--s4); }
+  .cmt-meta { display: flex; align-items: baseline; gap: var(--s2); }
+  .cmt-meta .nm { font-weight: 700; font-size: 13px; }
+  .cmt-meta time { font-size: 11.5px; color: var(--fg-3); }
+  .cmt-meta .x { margin-left: auto; }
+  .cmt-body { white-space: pre-wrap; margin-top: 2px; color: var(--fg-2); overflow-wrap: anywhere; }
+
+  /* ---------- misc ---------- */
+  .empty {
+    color: var(--fg-3);
+    font-size: 13px;
+    text-align: center;
+    padding: var(--s5) var(--s3);
+    border: 2px dashed var(--border-mid);
+    border-radius: var(--r-sm);
+  }
+  .notice {
+    margin-top: var(--s4);
+    padding: 11px var(--s4);
+    border-radius: var(--r-sm);
+    background: var(--mint-soft);
+    font-size: 12.5px;
+    color: var(--mint-deep);
+    font-weight: 500;
+  }
+  .notice.warn { background: var(--coral-soft); color: var(--coral); }
+  .msg { font-size: 12.5px; color: var(--fg-3); font-weight: 500; }
+  .msg.warn { color: var(--coral); font-weight: 600; }
+  .formnote { margin: 0; font-size: 12px; color: var(--fg-3); }
+  .foot { margin-top: var(--s5); font-size: 12px; color: var(--fg-3); text-align: center; }
+  @media (max-width: 520px) {
+    /* 휴대폰: 화면 안에 위아래 여백을 두고 가운데에 띄운다 */
+    dialog { width: calc(100% - 20px); }
+    .sheet {
+      max-height: calc(100vh - 24px);
+      max-height: calc(var(--app-h, 100dvh) - 24px);
+      border-radius: 22px;
+    }
+    .group { gap: 6px; }
+    .group-title { font-size: 13.5px; }
+    .sheet-head { padding: var(--s4) var(--s4) var(--s3); }
+    .sheet-body { padding: var(--s2) var(--s4) var(--s4); gap: var(--s4); }
+    .sheet-foot { padding: var(--s3) var(--s4); }
+
+    /* 칸은 한 줄에 하나씩, 시간만 좌우로 */
+    .row { gap: var(--s3) var(--s2); }
+    .row > .field { flex: 1 1 100%; }
+    .row > .field.grow { flex: 1 1 120px; }
+    .row > .field.half { flex: 1 1 calc(50% - 6px); }
+    .row > button { flex: 0 0 auto; }
+
+    /* 글씨는 전반적으로 한 단계 작게 */
+    body { font-size: 13.5px; }
+    .sheet-head h2 { font-size: 18px; }
+    .sheet-head .when { font-size: 12.5px; }
+    .sec-label.lead { font-size: 15px; }
+    .sec-label { font-size: 12px; }
+    .facts { font-size: 13px; padding: var(--s3); }
+    .facts dt { font-size: 12px; }
+    .who { font-size: 13.5px; padding: 10px var(--s3); }
+    .who .due { font-size: 13px; }
+    .sum { font-size: 12.5px; }
+    .sum.total > b { font-size: 14px; }
+    .pick { font-size: 12.5px; padding: 7px 14px; }
+    button { font-size: 13px; }
+    .btn-sm { font-size: 12px; }
+    .cmt { font-size: 13px; }
+    .field > label { font-size: 12px; }
+    .formnote, .msg { font-size: 11.5px; }
+
+    input, select, textarea { font-size: 13.5px; padding: 9px 11px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="brand">
+      <p class="eyebrow">Tennis Club</p>
+      <h1>🎾 테니스 캘린더</h1>
+    </div>
+  </header>
+
+  <div class="monthbar">
+    <h2 class="month-title"><span id="month-label">—</span><span class="yr" id="year-label"></span></h2>
+    <span class="loading" id="loading" hidden>불러오는 중…</span>
+    <div class="nav-group">
+      <button type="button" id="btn-prev" class="icon-btn" aria-label="이전 달">‹</button>
+      <button type="button" id="btn-today" class="btn-sm">오늘</button>
+      <button type="button" id="btn-next" class="icon-btn" aria-label="다음 달">›</button>
+    </div>
+  </div>
+
+  <section class="calendar" aria-label="월간 캘린더">
+    <div class="dow">
+      <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <div id="notice" class="notice" hidden></div>
+</div>
+
+<div class="fade" aria-hidden="true"></div>
+<button type="button" class="fab" id="fab">
+  <span class="plus" aria-hidden="true">＋</span>일정 등록
+</button>
+
+<!-- ─────────── 일정 등록 ─────────── -->
+<dialog id="dlg-form" aria-labelledby="form-title">
+  <form class="sheet" id="form-event" novalidate>
+    <div class="sheet-head">
+      <div>
+        <h2 id="form-title">일정 등록</h2>
+        <span class="when" id="form-when"></span>
+      </div>
+      <button type="button" class="close" data-close="dlg-form" aria-label="닫기">✕</button>
+    </div>
+    <div class="sheet-body">
+      <section class="group">
+        <h3 class="group-title">날짜 및 시간</h3>
+        <div class="field">
+          <label for="f-date">날짜</label>
+          <input id="f-date" name="date" type="date" required>
+        </div>
+        <div class="row">
+          <div class="field half"><label for="f-start">시작</label><input id="f-start" name="start" type="time" value="20:00" required></div>
+          <div class="field half"><label for="f-end">종료</label><input id="f-end" name="end" type="time" value="22:00" required></div>
+        </div>
+      </section>
+
+      <section class="group">
+        <h3 class="group-title">코트 정보</h3>
+        <div class="row">
+          <div class="field grow"><label for="f-place">장소</label><input id="f-place" name="place" type="text" placeholder="올림픽공원 테니스장" maxlength="40" required></div>
+          <div class="field half"><label for="f-court">코트 번호</label><input id="f-court" type="text" placeholder="3번" maxlength="12" autocomplete="off"></div>
+        </div>
+        <div class="field">
+          <label for="f-type">게임 유형</label>
+          <select id="f-type">
+            <option value="">선택 안 함</option>
+            <option value="혼복">혼복</option>
+            <option value="여복">여복</option>
+            <option value="랠리">랠리</option>
+            <option value="__custom">기타 (직접 입력)…</option>
+          </select>
+          <input id="f-type-text" type="text" placeholder="예: 남복, 단식, 레슨" maxlength="12" autocomplete="off" hidden>
+        </div>
+        <div class="row">
+          <div class="field half"><label for="f-capf">여자(명)</label><input id="f-capf" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
+          <div class="field half"><label for="f-capm">남자(명)</label><input id="f-capm" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <p class="formnote" id="f-cap-note">둘 다 비우면 인원 제한이 없습니다. 성별 자리가 차면 그 성별은 대기로 들어갑니다.</p>
+      </section>
+
+      <section class="group">
+        <h3 class="group-title">비용 정보</h3>
+        <div class="row">
+          <div class="field">
+            <label for="f-host">예약자</label>
+            <select id="f-host"></select>
+            <input id="f-host-text" type="text" placeholder="이름 입력" maxlength="20" autocomplete="off" hidden>
+          </div>
+          <div class="field"><label for="f-fee">코트비(원)</label><input id="f-fee" name="fee" type="number" min="0" step="100" inputmode="numeric" placeholder="ex. 20000"></div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="f-owner">캔볼 지참자</label>
+            <select id="f-owner"></select>
+            <input id="f-owner-text" type="text" placeholder="이름 입력" maxlength="20" autocomplete="off" hidden>
+          </div>
+          <div class="field"><label for="f-ball">캔볼 값(원)</label><input id="f-ball" name="ball" type="number" min="0" step="100" inputmode="numeric" placeholder="ex. 3500"></div>
+        </div>
+      </section>
+
+      <section class="group">
+        <h3 class="group-title">메모</h3>
+        <div class="field">
+          <textarea id="f-memo" name="memo" aria-label="메모" placeholder="주차, 준비물, 라켓 여분 등" maxlength="400"></textarea>
+        </div>
+      </section>
+    </div>
+    <div class="sheet-foot">
+      <span class="msg" id="form-msg" hidden></span>
+      <span class="spacer"></span>
+      <button type="button" class="btn-ghost btn-sm" data-close="dlg-form">취소</button>
+      <button type="submit" class="btn-primary" id="form-submit">등록</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ─────────── 일정 상세 ─────────── -->
+<dialog id="dlg-detail" aria-labelledby="d-place">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div>
+        <div class="ev-title"><h2 id="d-place">—</h2><span class="ev-court" id="d-court" hidden></span><span class="ev-type" id="d-type" hidden></span></div>
+        <span class="when" id="d-when"></span>
+      </div>
+      <button type="button" class="close" data-close="dlg-detail" aria-label="닫기">✕</button>
+    </div>
+    <div class="sheet-body">
+      <dl class="facts" id="d-facts"></dl>
+
+      <section class="sec">
+        <div class="sec-label lead">참가자 <span class="count" id="d-pcount">0</span></div>
+        <div id="d-roster"></div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-label">비용 내역</div>
+        <div class="ledger" id="d-ledger"></div>
+        <p class="formnote">코트비와 캔볼 값을 확정 참가자 인원으로 나눠 10원 단위로 올림 정산합니다. 대기자는 제외됩니다.</p>
+      </section>
+
+      <section class="sec">
+        <div class="sec-label">참가 신청</div>
+        <div class="quickadd" id="d-quick"></div>
+        <form class="card" id="form-join">
+          <div class="row">
+            <div class="field grow"><label for="j-guest">게스트</label><input id="j-guest" name="guest" type="text" placeholder="회원이 아닌 사람 이름" maxlength="20"></div>
+            <div class="seg" role="radiogroup" aria-label="게스트 성별">
+              <label><input type="radio" name="jg" value="F"><span class="f">여</span></label>
+              <label><input type="radio" name="jg" value="M"><span class="m">남</span></label>
+            </div>
+            <button type="submit" name="kind" value="guest">추가</button>
+          </div>
+          <p class="msg" id="join-msg" hidden></p>
+        </form>
+      </section>
+
+      <section class="sec">
+        <div class="sec-label">댓글 <span id="d-ccount">0</span></div>
+        <div id="d-comments"></div>
+        <form class="card" id="form-comment">
+          <div class="field">
+            <label for="c-who">작성자</label>
+            <select id="c-who"></select>
+            <input id="c-who-text" type="text" placeholder="이름 입력" maxlength="20" autocomplete="off" hidden>
+          </div>
+          <div class="row">
+            <div class="field grow"><label for="c-text">내용</label><input id="c-text" name="text" type="text" placeholder="댓글을 남기세요" maxlength="300"></div>
+            <button type="submit">등록</button>
+          </div>
+          <p class="msg" id="cmt-msg" hidden></p>
+        </form>
+      </section>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="btn-sm" id="btn-edit-event">일정 수정</button>
+      <button type="button" class="btn-ghost btn-sm btn-danger" id="btn-del-event">삭제</button>
+      <span class="msg" id="detail-msg" hidden></span>
+      <span class="loading" id="d-loading" hidden>동기화 중…</span>
+      <span class="spacer"></span>
+      <button type="button" class="btn-sm" data-close="dlg-detail">닫기</button>
+    </div>
+  </div>
+</dialog>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+import {
+  initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
+  collection, doc, query, where, onSnapshot,
+  setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove
+} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+/* ── Firebase 연결 정보 ─────────────────────────────────────────
+   Firebase 콘솔 → 프로젝트 설정 → 내 앱 → SDK 설정에서 복사한 값.
+   비밀번호가 아니라 "어느 프로젝트인지" 적는 주소라 공개돼도 괜찮다.
+   누가 뭘 할 수 있는지는 Firestore 보안 규칙이 정한다. */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+/* ── 회원 명단 ────────────────────────────────────────────────
+   여기 적은 이름이 참가 신청 버튼과 예약자·캔볼 지참자·댓글 작성자
+   드롭다운에 나옵니다. 명단에 없는 사람은 "직접 입력"으로 적습니다.
+   gender: "F" = 여자, "M" = 남자. 비워 두면 성별 자리 계산에서 남은 빈자리 아무 데나 씁니다. */
+const MEMBERS = [
+  { name: "주민경", gender: "F" },
+  { name: "정다슬", gender: "F" },
+  { name: "마현주", gender: "F" },
+  { name: "권희수", gender: "F" },
+  { name: "이지영", gender: "F" }
+];
+
+const app = initializeApp(firebaseConfig);
+let db;
+try {
+  // 브라우저에 데이터를 남겨 두어 다음에 열 때 즉시 그리고, 오프라인에서도 보인다
+  db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+} catch (e) {
+  db = getFirestore(app);
+}
+const EVENTS = collection(db, "events");
+
+(function () {
+  "use strict";
+
+  /* 휴대폰은 주소창·키보드 때문에 100vh 가 실제 화면보다 길다.
+     실제로 보이는 높이를 재서 팝업이 그 안에 들어오게 한다 */
+  (function trackAppHeight() {
+    function set() {
+      var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty("--app-h", Math.round(h) + "px");
+    }
+    set();
+    window.addEventListener("resize", set);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", set);
+  })();
+
+  /* 입력칸을 눌렀을 때 화면이 확대되지 않게 */
+  (function fixViewport() {
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) {
+      vp = document.createElement("meta");
+      vp.setAttribute("name", "viewport");
+      document.head.appendChild(vp);
+    }
+    vp.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1");
+  })();
+
+  function memberNames() { return MEMBERS.map(function (m) { return m.name; }); }
+  function isMember(name) { return memberNames().indexOf(name) >= 0; }
+  function memberGender(name) {
+    for (var i = 0; i < MEMBERS.length; i++) if (MEMBERS[i].name === name) return MEMBERS[i].gender || "";
+    return "";
+  }
+  function genderTag(g) {
+    return g === "F" ? '<span class="tag f">여</span>' : g === "M" ? '<span class="tag m">남</span>' : "";
+  }
+  function genderWord(g) { return g === "F" ? "여자" : g === "M" ? "남자" : ""; }
+
+  var events = [];            // 보고 있는 달의 일정 (Firestore 가 실시간으로 채운다)
+  var editingId = null;
+  var today = new Date();
+  var view = { y: today.getFullYear(), m: today.getMonth() };
+  var selDate = ymd(today);
+  var openEventId = null;
+  var loaded = false;         // 첫 데이터가 왔는가
+  var me = "";
+  try { me = localStorage.getItem("court.me") || ""; } catch (e) { me = ""; }
+
+  var MONTHS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+  var DOW = ["일","월","화","수","목","금","토"];
+
+  /* ---------- helpers ---------- */
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function won(n) { return Math.round(n).toLocaleString("ko-KR"); }
+  function num(v) { var n = parseInt(v, 10); return isFinite(n) && n > 0 ? n : 0; }
+  function str(v) { return String(v == null ? "" : v).trim(); }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function el(id) { return document.getElementById(id); }
+  function dateLabel(key) {
+    var p = key.split("-");
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return (+p[1]) + "월 " + (+p[2]) + "일 (" + DOW[d.getDay()] + ")";
+  }
+  function uid() {
+    return (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)).slice(0, 16);
+  }
+  function curYm() { return view.y + "-" + pad(view.m + 1); }
+
+  function say(msg, warn) {
+    var inModal = el("dlg-form").open ? el("form-msg")
+                : el("dlg-detail").open ? el("detail-msg") : null;
+    var n = el("notice");
+    if (inModal) {
+      inModal.textContent = msg || "";
+      inModal.hidden = !msg;
+      inModal.className = "msg" + (warn ? " warn" : "");
+      n.hidden = true;
+      return;
+    }
+    el("form-msg").hidden = true;
+    el("detail-msg").hidden = true;
+    if (!msg) { n.hidden = true; return; }
+    n.hidden = false;
+    n.className = "notice" + (warn ? " warn" : "");
+    n.textContent = msg;
+  }
+  function sayIn(id, msg, warn) {
+    var n = el(id);
+    n.textContent = msg || "";
+    n.hidden = !msg;
+    n.className = "msg" + (warn ? " warn" : "");
+  }
+  function errText(e) {
+    if (!e) return "잠시 후 다시 시도하세요.";
+    return e.message || String(e);
+  }
+  function setSyncing(on) {
+    el("loading").hidden = !on;
+    el("d-loading").hidden = !on;
+  }
+
+  /* 정산: 코트비 + 캔볼 값을 확정 참가자 수로 나누고 10원 단위 올림.
+     캔볼 지참자는 이미 낸 캔볼 값을 빼고 납부하며, 음수면 돌려받는다. */
+  function settle(ev, list) {
+    var court = num(ev.courtFee), ball = num(ev.ballPrice);
+    var total = court + ball;
+    var n = list.length;
+    var per = n > 0 ? Math.ceil(total / n / 10) * 10 : 0;
+    return { total: total, court: court, ball: ball, n: n, per: per,
+             surplus: per * n - total, owner: ev.ballOwner || "" };
+  }
+
+  /* 신청 순서대로 자리를 채우고, 넘치면 대기. 누가 빠지면 같은 성별의 다음 대기자가 저절로 올라온다.
+     - 성별 정원(capF/capM)이 있는 일정: 여자는 여자 자리, 남자는 남자 자리를 쓴다.
+       성별을 모르는 사람은 남은 자리 아무 데나 쓴다.
+     - 예전 일정(성별 구분 없는 capacity): 성별 상관없이 capacity 명까지.
+     - 둘 다 0 이면 제한 없음. */
+  function withStatus(list, ev) {
+    var gendered = !!(ev && ev.gendered);
+    var cf = gendered ? num(ev.capF) : 0, cm = gendered ? num(ev.capM) : 0;
+    var cap = gendered ? cf + cm : num(ev && ev.capacity);
+    var inF = 0, inM = 0, inAll = 0;
+    var out = (list || []).slice().sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
+    return out.map(function (p) {
+      var q = {}; for (var k in p) q[k] = p[k];
+      var ok;
+      if (gendered) {
+        if (q.gender === "F") { ok = inF < cf; if (ok) inF++; }
+        else if (q.gender === "M") { ok = inM < cm; if (ok) inM++; }
+        else { ok = inF < cf || inM < cm; if (ok) { if (inF < cf) inF++; else inM++; } }
+      } else {
+        ok = !cap || inAll < cap;
+      }
+      if (ok) inAll++;
+      q.status = ok ? "in" : "wait";
+      return q;
+    });
+  }
+  function confirmed(list) { return list.filter(function (p) { return p.status !== "wait"; }); }
+  function waiting(list) { return list.filter(function (p) { return p.status === "wait"; }); }
+
+  function findEvent(id) {
+    for (var i = 0; i < events.length; i++) if (events[i].id === id) return events[i];
+    return null;
+  }
+  function rawPart(ev, pid) {
+    var ps = ev.participants || [];
+    for (var i = 0; i < ps.length; i++) if (ps[i].id === pid) return ps[i];
+    return null;
+  }
+  function rawComment(ev, cid) {
+    var cs = ev.comments || [];
+    for (var i = 0; i < cs.length; i++) if (cs[i].id === cid) return cs[i];
+    return null;
+  }
+
+  /* Firestore 문서 → 화면용 객체 */
+  function normalize(id, d) {
+    d = d || {};
+    var ev = {
+      id: id,
+      date: str(d.date),
+      place: str(d.place),
+      court: str(d.court),
+      start: str(d.start),
+      end: str(d.end),
+      courtFee: num(d.courtFee),
+      ballOwner: str(d.ballOwner),
+      ballPrice: num(d.ballPrice),
+      host: str(d.host),
+      gameType: str(d.gameType),
+      capF: typeof d.capF === "number" ? num(d.capF) : null,
+      capM: typeof d.capM === "number" ? num(d.capM) : null,
+      memo: str(d.memo),
+      createdAt: Number(d.createdAt) || 0,
+      participants: Array.isArray(d.participants) ? d.participants : [],
+      comments: Array.isArray(d.comments) ? d.comments : []
+    };
+    ev.gendered = (ev.capF !== null || ev.capM !== null) && (num(ev.capF) + num(ev.capM)) > 0;
+    ev.capacity = ev.gendered ? num(ev.capF) + num(ev.capM) : num(d.capacity);
+    var ps = withStatus(ev.participants, ev);
+    ev.heads = confirmed(ps).length;
+    ev.waiting = waiting(ps).length;
+    return ev;
+  }
+
+  /* ---------- Firestore 구독: 보고 있는 달을 실시간으로 받는다 ---------- */
+  var unsub = null;
+  function subscribeMonth() {
+    if (unsub) { unsub(); unsub = null; }
+    var ym = curYm();
+    var q = query(EVENTS, where("date", ">=", ym + "-01"), where("date", "<=", ym + "-31"));
+    loaded = false;
+    setSyncing(true);
+    renderCalendar();
+    unsub = onSnapshot(q, { includeMetadataChanges: true }, function (snap) {
+      if (ym !== curYm()) return;
+      events = snap.docs.map(function (d) { return normalize(d.id, d.data()); });
+      events.sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); });
+      loaded = true;
+      setSyncing(snap.metadata.fromCache || snap.metadata.hasPendingWrites);
+      renderCalendar();
+      if (openEventId) {
+        if (findEvent(openEventId)) renderDetail();
+        else { closeDetail(); say("이 일정은 삭제되었습니다.", true); }
+      }
+    }, function (err) {
+      setSyncing(false);
+      say("일정을 불러오지 못했습니다. " + errText(err), true);
+    });
+  }
+
+  /* 달력 칩 글자: {장소} {코트번호} / {게임유형}. 빈 칸은 건너뛴다 */
+  function chipLabel(ev) {
+    var label = (ev.place || "코트") + (ev.court ? " " + ev.court : "");
+    return ev.gameType ? label + " / " + ev.gameType : label;
+  }
+
+  /* ---------- 캘린더 ---------- */
+  function renderCalendar() {
+    el("month-label").textContent = MONTHS[view.m];
+    el("year-label").textContent = view.y;
+
+    var first = new Date(view.y, view.m, 1);
+    var start = new Date(view.y, view.m, 1 - first.getDay());
+    var daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
+    var cellCount = Math.ceil((first.getDay() + daysInMonth) / 7) * 7;
+    var todayKey = ymd(today);
+    var byDate = {};
+    events.forEach(function (ev) { (byDate[ev.date] = byDate[ev.date] || []).push(ev); });
+
+    var html = "";
+    for (var i = 0; i < cellCount; i++) {
+      var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      var key = ymd(d);
+      var cls = "cell";
+      if (d.getMonth() !== view.m) cls += " out";
+      if (key === selDate) cls += " sel";
+      if (key === todayKey) cls += " today";
+      if (d.getDay() === 0) cls += " sun";
+      if (d.getDay() === 6) cls += " sat";
+      var chips = (byDate[key] || []).map(function (ev) {
+        var heads = ev.heads, cap = num(ev.capacity), wait = ev.waiting;
+        var cnt = cap ? heads + "/" + cap : String(heads);
+        if (wait) cnt += " +" + wait;
+        var tip = (ev.start || "") + " " + chipLabel(ev) +
+          " · 참가 " + heads + (cap ? "/" + cap : "") + "명" + (wait ? ", 대기 " + wait + "명" : "");
+        return '<button type="button" class="chip" data-open="' + esc(ev.id) + '" title="' + esc(tip.trim()) + '">' +
+          '<span class="nm">' + esc(chipLabel(ev)) + '</span>' +
+          '<span class="cnt">' + esc(cnt) + '</span></button>';
+      }).join("");
+      html += '<div class="' + cls + '" data-date="' + key + '">' +
+        '<button type="button" class="daynum" data-new="' + key + '" aria-label="' + dateLabel(key) + ' 일정 등록">' +
+        d.getDate() + '</button>' + chips + '</div>';
+    }
+    el("grid").innerHTML = html;
+  }
+
+  /* ---------- 상세 ---------- */
+  function renderDetail() {
+    var ev = findEvent(openEventId);
+    if (!ev) return;
+    var parts = withStatus(ev.participants, ev);
+    var comments = (ev.comments || []).slice().sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
+    var ins = confirmed(parts), waits = waiting(parts);
+    var cap = num(ev.capacity);
+    var s = settle(ev, ins);
+
+    el("d-place").textContent = ev.place || "장소 미정";
+    var courtEl = el("d-court");
+    courtEl.textContent = ev.court || "";
+    courtEl.hidden = !ev.court;
+    var typeEl = el("d-type");
+    typeEl.textContent = ev.gameType || "";
+    typeEl.hidden = !ev.gameType;
+    el("d-when").textContent = dateLabel(ev.date);
+
+    var facts = '<dt>일시</dt><dd class="mono">' + esc(dateLabel(ev.date)) + "  " +
+      esc(ev.start || "--:--") + " – " + esc(ev.end || "--:--") + '</dd>';
+    facts += '<dt>입금처</dt><dd>' +
+      (ev.host ? esc(ev.host) : '<span class="dim">미지정</span>') + '</dd>';
+    facts += '<dt>캔볼</dt><dd>' +
+      (s.owner ? esc(s.owner) + (s.ball ? ' <span class="dim">·</span> ' + won(s.ball) + '원' : "")
+               : '<span class="dim">지참자 미정</span>') + '</dd>';
+    var waitTxt = waits.length ? ' <span class="dim">·</span> 대기 ' + waits.length + '명' : "";
+    if (ev.gendered) {
+      facts += '<dt>정원</dt><dd>' + cap + '명 <span class="dim">(여 ' + num(ev.capF) + ' / 남 ' + num(ev.capM) + ')</span>' + waitTxt + '</dd>';
+    } else {
+      facts += '<dt>정원</dt><dd>' + (cap ? cap + '명' + waitTxt : '<span class="dim">제한 없음</span>') + '</dd>';
+    }
+    if (ev.memo) facts += '<dt>메모</dt><dd class="memo">' + esc(ev.memo) + '</dd>';
+    el("d-facts").innerHTML = facts;
+
+    el("d-pcount").textContent = cap ? ins.length + "/" + cap : String(ins.length);
+    if (!parts.length) {
+      el("d-roster").innerHTML = '<div class="empty">아직 신청한 사람이 없습니다.</div>';
+    } else {
+      var rows = ins.map(function (p) {
+        var isOwner = s.owner && p.name === s.owner && s.ball > 0;
+        var due = isOwner ? s.per - s.ball : s.per;
+        return '<div class="who"><span class="nm">' + esc(p.name) + '</span>' +
+          genderTag(p.gender) +
+          (p.guest ? '<span class="tag guest">게스트</span>' : "") +
+          (isOwner ? '<span class="tag ball">캔볼</span>' : "") +
+          '<span class="due' + (due < 0 ? " refund" : "") + '">' +
+          (due < 0 ? "+" + won(-due) + "원 받음" : won(due) + "원") + '</span>' +
+          '<button type="button" class="x" data-del-part="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 참가 취소">×</button>' +
+          '</div>';
+      }).join("");
+      if (waits.length) {
+        rows += '<div class="sub-label">대기 ' + waits.length + '명 — 자리가 나면 순서대로 올라갑니다</div>';
+        rows += waits.map(function (p, i) {
+          return '<div class="who wait"><span class="ord">' + (i + 1) + '</span><span class="nm">' + esc(p.name) + '</span>' +
+            genderTag(p.gender) +
+            (p.guest ? '<span class="tag guest">게스트</span>' : "") +
+            '<span class="due wait">대기</span>' +
+            '<button type="button" class="x" data-del-part="' + esc(p.id) + '" aria-label="' + esc(p.name) + ' 대기 취소">×</button>' +
+            '</div>';
+        }).join("");
+      }
+      el("d-roster").innerHTML = '<div class="roster">' + rows + '</div>';
+    }
+
+    el("d-ledger").innerHTML =
+      '<div class="sums">' +
+        '<div class="sum"><span>코트비</span><b>' + won(s.court) + '원</b></div>' +
+        (s.ball ? '<div class="sum"><span>캔볼</span><b>' + won(s.ball) + '원</b></div>' : "") +
+        '<div class="sum total"><span>총 금액</span><b>' + won(s.total) + '원</b></div>' +
+      '</div>';
+
+    var inList = {};
+    parts.forEach(function (p) { inList[p.name] = p.status === "wait" ? "wait" : "in"; });
+    el("d-quick").innerHTML = memberNames().map(function (name) {
+      var already = inList[name];
+      return '<button type="button" class="pick" data-add="' + esc(name) + '"' +
+        (already ? " disabled" : "") + '>' +
+        '<span class="sign">' + (already === "wait" ? "⏳" : already ? "✓" : "+") + '</span>' + esc(name) + '</button>';
+    }).join("");
+
+    el("d-ccount").textContent = comments.length;
+    el("d-comments").innerHTML = comments.length
+      ? '<div class="cmt-list">' + comments.map(function (c) {
+          var t = c.at ? new Date(c.at) : null;
+          return '<div class="cmt"><div class="cmt-meta"><span class="nm">' + esc(c.name || "익명") + '</span>' +
+            (t ? '<time>' + pad(t.getMonth() + 1) + "/" + pad(t.getDate()) + " " + pad(t.getHours()) + ":" + pad(t.getMinutes()) + '</time>' : "") +
+            '<button type="button" class="x" data-del-cmt="' + esc(c.id) + '" aria-label="댓글 삭제">×</button></div>' +
+            '<div class="cmt-body">' + esc(c.text) + '</div></div>';
+        }).join("") + '</div>'
+      : "";
+  }
+
+  /* ---------- 쓰기 (Firestore 가 로컬에 먼저 반영하고 서버와 맞춘다) ---------- */
+  function joinEvent(name, guest, gender) {
+    var ev = findEvent(openEventId);
+    if (!ev) return;
+    var parts = withStatus(ev.participants, ev);
+    if (parts.some(function (p) { return p.name === name; })) {
+      sayIn("join-msg", name + "님은 이미 신청했습니다.", true);
+      return;
+    }
+    if (!guest) remember(name);
+    var g = guest ? (gender || "") : memberGender(name);
+    var part = { id: uid(), name: name, guest: !!guest, gender: g, at: Date.now() };
+    var after = withStatus(ev.participants.concat([part]), ev);
+    var mine = after.filter(function (p) { return p.id === part.id; })[0];
+    if (mine && mine.status === "wait") {
+      var why = ev.gendered && g ? genderWord(g) + " 자리가 차서 " : "정원이 차서 ";
+      sayIn("join-msg", why + name + "님은 대기 " + (waiting(after).indexOf(mine) + 1) + "번으로 들어갔습니다.");
+    } else {
+      sayIn("join-msg", "");
+    }
+    updateDoc(doc(EVENTS, ev.id), { participants: arrayUnion(part) })
+      .catch(function (err) { sayIn("join-msg", "저장하지 못했습니다. " + errText(err), true); });
+  }
+
+  function leaveEvent(pid) {
+    var ev = findEvent(openEventId);
+    if (!ev) return;
+    var raw = rawPart(ev, pid);
+    if (!raw) return;
+    updateDoc(doc(EVENTS, ev.id), { participants: arrayRemove(raw) })
+      .catch(function (err) { say("취소하지 못했습니다. " + errText(err), true); });
+  }
+
+  function addComment(who, text) {
+    var ev = findEvent(openEventId);
+    if (!ev) return;
+    var c = { id: uid(), name: who, text: text, at: Date.now() };
+    updateDoc(doc(EVENTS, ev.id), { comments: arrayUnion(c) })
+      .catch(function (err) { sayIn("cmt-msg", "저장하지 못했습니다. " + errText(err), true); });
+  }
+
+  function removeComment(cid) {
+    var ev = findEvent(openEventId);
+    if (!ev) return;
+    var raw = rawComment(ev, cid);
+    if (!raw) return;
+    updateDoc(doc(EVENTS, ev.id), { comments: arrayRemove(raw) })
+      .catch(function (err) { say("삭제하지 못했습니다. " + errText(err), true); });
+  }
+
+  /* ---------- 상세 열기/닫기 ---------- */
+  function openDetail(id) {
+    if (!findEvent(id)) return;
+    openEventId = id;
+    renderDetail();
+    el("detail-msg").hidden = true;
+    el("join-msg").hidden = true;
+    el("cmt-msg").hidden = true;
+    el("notice").hidden = true;
+    el("dlg-detail").showModal();
+  }
+  function closeDetail() {
+    openEventId = null;
+    var d = el("dlg-detail");
+    if (d.open) d.close();
+  }
+
+  /* ---------- 등록 폼 ---------- */
+  function openForm(dateKey, ev, asNew) {
+    editingId = ev && !asNew ? ev.id : null;
+    selDate = dateKey;
+    renderCalendar();
+
+    var f = el("form-event");
+    f.reset();
+    el("f-date").value = dateKey;
+    el("f-place").value = ev ? (ev.place || "") : "";
+    el("f-start").value = ev && ev.start ? ev.start : "20:00";
+    el("f-end").value = ev && ev.end ? ev.end : "22:00";
+    el("f-fee").value = ev && ev.courtFee ? ev.courtFee : "";
+    el("f-court").value = ev ? (ev.court || "") : "";
+    setTypePicker(ev ? ev.gameType : "");
+    el("f-capf").value = ev && ev.gendered ? num(ev.capF) : "";
+    el("f-capm").value = ev && ev.gendered ? num(ev.capM) : "";
+    capAuto = false;
+    legacyCap = ev && !ev.gendered && !asNew ? num(ev.capacity) : 0;
+    el("f-cap-note").textContent = legacyCap
+      ? "지금 정원은 성별 구분 없이 " + legacyCap + "명입니다. 여자·남자 인원을 넣으면 성별 정원으로 바뀌고, 비워 두면 그대로 둡니다."
+      : "둘 다 비우면 인원 제한이 없습니다. 성별 자리가 차면 그 성별은 대기로 들어갑니다.";
+    setPicker("f-owner", "f-owner-text", ev ? ev.ballOwner : "");
+    el("f-ball").value = ev && ev.ballPrice ? ev.ballPrice : "";
+    setPicker("f-host", "f-host-text", ev ? ev.host : "");
+    el("f-memo").value = ev ? (ev.memo || "") : "";
+
+    el("form-title").textContent = editingId ? "일정 수정" : "일정 등록";
+    el("form-submit").textContent = editingId ? "저장" : "등록";
+    el("form-when").textContent = dateLabel(dateKey);
+    el("form-msg").hidden = true;
+    el("notice").hidden = true;
+    el("dlg-form").showModal();
+  }
+
+  function remember(name) {
+    me = name;
+    try { localStorage.setItem("court.me", name); } catch (e) {}
+  }
+
+  var CUSTOM = "__custom";
+
+  /* 게임 유형: 혼복·여복을 고르면 여/남 인원을 채워 준다 (직접 바꾼 값은 건드리지 않는다) */
+  var capAuto = false;     // 지금 칸의 숫자가 자동으로 채운 값인가
+  var legacyCap = 0;       // 예전 일정의 성별 구분 없는 정원 (수정할 때 지키기 위해)
+  var TYPE_PRESET = { "혼복": [2, 2], "여복": [4, 0] };      // 고르면 여/남 인원을 채워 주는 유형
+  var TYPE_FIXED = { "혼복": 1, "여복": 1, "랠리": 1 };       // 목록에 있는 유형 (나머지는 기타)
+  function setupTypePicker() {
+    var sel = el("f-type"), txt = el("f-type-text");
+    sel.addEventListener("change", function () {
+      if (sel.value === CUSTOM) { txt.hidden = false; txt.focus(); }
+      else { txt.hidden = true; txt.value = ""; }
+      var preset = TYPE_PRESET[sel.value];
+      var empty = !el("f-capf").value && !el("f-capm").value;
+      if (preset && (empty || capAuto)) {
+        el("f-capf").value = preset[0];
+        el("f-capm").value = preset[1];
+        capAuto = true;
+      }
+    });
+    ["f-capf", "f-capm"].forEach(function (id) {
+      el(id).addEventListener("input", function () { capAuto = false; });
+    });
+  }
+  function typeValue() {
+    var sel = el("f-type");
+    return (sel.value === CUSTOM ? el("f-type-text").value : sel.value).trim();
+  }
+  function setTypePicker(v) {
+    var sel = el("f-type"), txt = el("f-type-text");
+    v = v || "";
+    if (v && !TYPE_FIXED[v]) { sel.value = CUSTOM; txt.value = v; txt.hidden = false; }
+    else { sel.value = v; txt.value = ""; txt.hidden = true; }
+  }
+  function setupPicker(selId, textId, none) {
+    var sel = el(selId), txt = el(textId);
+    var out = '<option value="">' + esc(none) + '</option>';
+    memberNames().forEach(function (n) { out += '<option value="' + esc(n) + '">' + esc(n) + '</option>'; });
+    out += '<option value="' + CUSTOM + '">직접 입력…</option>';
+    sel.innerHTML = out;
+    sel.addEventListener("change", function () {
+      if (sel.value === CUSTOM) { txt.hidden = false; txt.focus(); }
+      else { txt.hidden = true; txt.value = ""; }
+    });
+  }
+  function pickerValue(selId, textId) {
+    var sel = el(selId), txt = el(textId);
+    return (sel.value === CUSTOM ? (txt.value || "") : sel.value).trim();
+  }
+  function setPicker(selId, textId, value) {
+    var sel = el(selId), txt = el(textId);
+    value = value || "";
+    if (value && !isMember(value)) {
+      sel.value = CUSTOM; txt.value = value; txt.hidden = false;
+    } else {
+      sel.value = value; txt.value = ""; txt.hidden = true;
+    }
+  }
+
+  /* ---------- 이벤트 연결 ---------- */
+  el("grid").addEventListener("click", function (e) {
+    var newBtn = e.target.closest("[data-new]");
+    if (newBtn) { openForm(newBtn.getAttribute("data-new")); return; }
+    var chip = e.target.closest("[data-open]");
+    if (chip) { openDetail(chip.getAttribute("data-open")); return; }
+    var cell = e.target.closest("[data-date]");
+    if (cell) { selDate = cell.getAttribute("data-date"); renderCalendar(); }
+  });
+
+  el("fab").addEventListener("click", function () { openForm(selDate); });
+
+  document.addEventListener("click", function (e) {
+    var c = e.target.closest("[data-close]");
+    if (!c) return;
+    var id = c.getAttribute("data-close");
+    if (id === "dlg-detail") closeDetail();
+    else el(id).close();
+  });
+
+  el("dlg-form").addEventListener("close", function () { editingId = null; });
+  el("dlg-detail").addEventListener("close", function () { openEventId = null; });
+
+  el("form-event").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var form = e.target;
+    var fd = new FormData(form);
+    var place = (fd.get("place") || "").trim();
+    var dateKey = fd.get("date") || selDate;
+    if (!dateKey) { say("날짜를 정해주세요.", true); el("f-date").focus(); return; }
+    if (!place) { say("장소를 적어주세요.", true); el("f-place").focus(); return; }
+
+    var payload = {
+      date: dateKey,
+      place: place,
+      start: fd.get("start") || "",
+      end: fd.get("end") || "",
+      courtFee: num(fd.get("fee")),
+      ballOwner: pickerValue("f-owner", "f-owner-text"),
+      ballPrice: num(fd.get("ball")),
+      host: pickerValue("f-host", "f-host-text"),
+      court: (el("f-court").value || "").trim(),
+      gameType: typeValue(),
+      memo: (fd.get("memo") || "").trim()
+    };
+    var fRaw = (el("f-capf").value || "").trim(), mRaw = (el("f-capm").value || "").trim();
+    if (fRaw !== "" || mRaw !== "") {
+      payload.capF = num(fRaw);
+      payload.capM = num(mRaw);
+      payload.capacity = payload.capF + payload.capM;
+    } else {
+      payload.capF = null;
+      payload.capM = null;
+      payload.capacity = legacyCap;   // 예전 일정은 원래 정원 유지, 새 일정은 0 = 제한 없음
+    }
+
+    var p = dateKey.split("-");
+    var editId = editingId;
+    var jumped = (+p[0] !== view.y || +p[1] - 1 !== view.m);
+
+    editingId = null;
+    el("dlg-form").close();
+    selDate = dateKey;
+    if (jumped) { view.y = +p[0]; view.m = +p[1] - 1; subscribeMonth(); }
+
+    if (editId) {
+      updateDoc(doc(EVENTS, editId), payload).then(function () {
+        say("일정을 수정했습니다.");
+      }).catch(function (err) {
+        say("저장하지 못했습니다. " + errText(err), true);
+      });
+      say("일정을 수정했습니다.");
+    } else {
+      var id = uid();
+      var data = {};
+      for (var k in payload) data[k] = payload[k];
+      data.createdAt = Date.now();
+      data.participants = payload.host ? [{ id: uid(), name: payload.host, guest: false, gender: memberGender(payload.host), at: Date.now() }] : [];
+      data.comments = [];
+      setDoc(doc(EVENTS, id), data).catch(function (err) {
+        openForm(dateKey, payload, true);
+        say("등록하지 못했습니다. " + errText(err), true);
+      });
+      say(dateLabel(dateKey) + " 일정을 등록했습니다." +
+          (payload.host ? " 예약자 " + payload.host + "님은 참가자로 들어갔습니다." : "") +
+          " 일정을 누르면 참가 신청이 열립니다.");
+    }
+  });
+
+  el("form-join").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = (el("j-guest").value || "").trim();
+    if (!name) { sayIn("join-msg", "게스트 이름을 입력하세요.", true); el("j-guest").focus(); return; }
+    var picked = document.querySelector('input[name="jg"]:checked');
+    if (!picked) { sayIn("join-msg", "게스트 성별을 고르세요.", true); return; }
+    el("j-guest").value = "";
+    picked.checked = false;
+    joinEvent(name, true, picked.value);
+  });
+
+  el("form-comment").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var who = pickerValue("c-who", "c-who-text");
+    var text = (el("c-text").value || "").trim();
+    if (!who) { sayIn("cmt-msg", "작성자 이름을 선택하세요.", true); el("c-who").focus(); return; }
+    if (!text) return;
+    remember(who);
+    el("c-text").value = "";
+    sayIn("cmt-msg", "");
+    addComment(who, text);
+  });
+
+  el("dlg-detail").addEventListener("click", function (e) {
+    var add = e.target.closest("[data-add]");
+    if (add) { joinEvent(add.getAttribute("data-add"), false); return; }
+    var dp = e.target.closest("[data-del-part]");
+    if (dp) { leaveEvent(dp.getAttribute("data-del-part")); return; }
+    var dc = e.target.closest("[data-del-cmt]");
+    if (dc) { removeComment(dc.getAttribute("data-del-cmt")); }
+  });
+
+  el("btn-edit-event").addEventListener("click", function () {
+    var ev = findEvent(openEventId);
+    if (!ev) return;
+    openForm(ev.date, ev);
+  });
+
+  el("btn-del-event").addEventListener("click", function () {
+    if (!openEventId) return;
+    if (!window.confirm("이 일정을 지웁니다. 참가자와 댓글도 함께 사라집니다.")) return;
+    var id = openEventId;
+    closeDetail();
+    deleteDoc(doc(EVENTS, id)).then(function () {
+      say("일정을 지웠습니다.");
+    }).catch(function (err) {
+      say("삭제하지 못했습니다. " + errText(err), true);
+    });
+    say("일정을 지웠습니다.");
+  });
+
+  function moveMonth(delta) {
+    view.m += delta;
+    if (view.m < 0) { view.m = 11; view.y--; }
+    if (view.m > 11) { view.m = 0; view.y++; }
+    subscribeMonth();
+  }
+  el("btn-prev").addEventListener("click", function () { moveMonth(-1); });
+  el("btn-next").addEventListener("click", function () { moveMonth(1); });
+  el("btn-today").addEventListener("click", function () {
+    view.y = today.getFullYear(); view.m = today.getMonth(); selDate = ymd(today);
+    subscribeMonth();
+  });
+
+  /* ---------- 시작 ---------- */
+  setupPicker("f-host", "f-host-text", "선택 안 함");
+  setupPicker("f-owner", "f-owner-text", "선택 안 함");
+  setupPicker("c-who", "c-who-text", "이름 선택");
+  setupTypePicker();
+  renderCalendar();
+  subscribeMonth();
+})();
+</script>
+</body>
+</html>

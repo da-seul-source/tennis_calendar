@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 캘린더 일정: 링크를 아는 사람은 보고, 만들고, 고치고, 지울 수 있다 (로그인 없음)
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasAll(['date'])
+                            && request.resource.data.date is string
+                            && request.resource.size() < 50 * 1024;
+      allow delete: if true;
+    }
+    // 그 밖의 경로는 모두 막는다
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
