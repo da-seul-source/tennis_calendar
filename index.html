@@ -42,6 +42,7 @@
      카드 밖 글줄은 좌우 4 들여쓰기 */
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
+  html { touch-action: manipulation; } /* 버튼을 빠르게 두 번 눌러도 화면이 확대되지 않게 */
   html, body { margin: 0; background: var(--bg); }
   body {
     color: var(--fg); font-family: var(--sans); font-size: 13px; line-height: 1.45;
@@ -301,7 +302,15 @@
         <div class="chips" id="f-owner"></div>
       </div>
 
-      <div class="row">
+      <div class="fld">
+        <span class="lbl">비용</span>
+        <div class="seg" id="f-feemode" role="group" aria-label="비용 방식">
+          <button type="button" data-fm="split" aria-pressed="true">코트비 나눠 내기</button>
+          <button type="button" data-fm="entry" aria-pressed="false">참가비</button>
+        </div>
+      </div>
+      <div class="fld" id="f-entry-box" hidden><label for="f-entry">참가비 (1인, 원)</label><input id="f-entry" type="text" inputmode="numeric" placeholder="30000" maxlength="9" autocomplete="off"></div>
+      <div class="row" id="f-split-box">
         <div class="fld"><label for="f-fee">코트비 (원)</label><input id="f-fee" type="text" inputmode="numeric" placeholder="20000" maxlength="9" autocomplete="off"></div>
         <div class="fld"><label for="f-bprice">캔볼 값 (원)</label><input id="f-bprice" type="text" inputmode="numeric" placeholder="3500" maxlength="7" autocomplete="off"></div>
       </div>
@@ -363,7 +372,7 @@ const EVENTS = collection(db, "events");
 
 /* ---------- 상태 ---------- */
 const DOW = ["일", "월", "화", "수", "목", "금", "토"];
-const TYPES = ["혼복", "여복", "남복", "단식", "랠리"];
+const TYPES = ["혼복", "여복", "남복", "단식", "랠리", "교류전"];
 const TYPE_PRESET = { "혼복": [2, 2], "여복": [4, 0], "남복": [0, 4] };   // 고르면 여/남 인원을 채워 준다
 let events = [];
 /* '오늘'은 폰 설정과 상관없이 한국 시간으로 */
@@ -417,7 +426,8 @@ function ordered(list) { return list.slice().sort((a, b) => (a.at || 0) - (b.at 
 
 /* 정산: (코트비 + 캔볼 값) ÷ 확정 인원, 10원 단위 올림.
    캔볼 가져온 사람은 이미 낸 캔볼 값을 빼고 내며, 음수면 돌려받는다. */
-function settleOf(courtFee, ballPrice, ballOwner, names) {
+function settleOf(courtFee, ballPrice, ballOwner, names, entryFee) {
+  if (entryFee) return { total: entryFee * names.length, n: names.length, per: entryFee, due: () => entryFee, entry: true };
   const total = courtFee + ballPrice, n = names.length;
   const per = n ? Math.ceil(total / n / 10) * 10 : 0;
   const due = name => per - (ballPrice && name === ballOwner ? ballPrice : 0);
@@ -439,6 +449,7 @@ function normalize(id, d) {
     place: str(d.place), court: str(d.court), type: str(d.gameType),
     capF: capF, capM: capM, memo: str(d.memo),
     courtFee: num(d.courtFee), ballPrice: num(d.ballPrice),
+    feeMode: d.feeMode === "entry" ? "entry" : "split", entryFee: num(d.entryFee),
     ball: ball, ballOwner: ball ? ME : str(d.ballOwner),
     host: str(d.host),
     participants: parts,
@@ -493,8 +504,9 @@ function card(ev) {
 
   // 금액: 내 코트면 1인 금액, 남 코트면 내가 낼 몫 (캔볼 가져가면 그만큼 빼고)
   let money = "";
-  const s = settleOf(ev.courtFee, ev.ballPrice, ev.ballOwner, ev.names);
-  if (ev.mine && s.total && !s.n) money = '<span class="money">코트비 ' + won(s.total) + '</span>';
+  const s = settleOf(ev.courtFee, ev.ballPrice, ev.ballOwner, ev.names, ev.feeMode === "entry" ? ev.entryFee : 0);
+  if (ev.feeMode === "entry") { if (ev.entryFee) money = '<span class="money">참가비 ' + won(ev.entryFee) + '</span>'; }
+  else if (ev.mine && s.total && !s.n) money = '<span class="money">코트비 ' + won(s.total) + '</span>';
   else if (s.total && s.n) {
     if (ev.mine) money = '<span class="money">' + (s.n > 1 ? "1인 " + won(s.per) : "코트비 " + won(s.total)) + '</span>';
     else if (ev.names.indexOf(ME) >= 0) {
@@ -564,7 +576,7 @@ function listHtml() {
 }
 
 function render() {
-  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+  document.querySelectorAll(".seg [data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
   el("view").innerHTML = mode === "cal" ? calendarHtml() : listHtml();
 }
 
@@ -669,20 +681,28 @@ function renderRoles() {
 }
 function renderSettle() {
   const mine = F.host === ME;
-  const fee = num(el("f-fee").value), bp = num(el("f-bprice").value);
+  const entry = F.feeMode === "entry";
+  el("f-entry-box").hidden = !entry;
+  el("f-split-box").hidden = entry;
+  document.querySelectorAll("#f-feemode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fm === F.feeMode)));
+  const ef = entry ? num(el("f-entry").value) : 0;
+  const fee = entry ? 0 : num(el("f-fee").value), bp = entry ? 0 : num(el("f-bprice").value);
   const owner = F.owner;
   const ins = formIns();
-  const s = settleOf(fee, bp, owner, ins);
-  const showLedger = fee + bp > 0;
+  const s = settleOf(fee, bp, owner, ins, ef);
+  const showLedger = entry ? ef > 0 : fee + bp > 0;
   el("f-ledger").hidden = !showLedger;
-  let h = '<div class="ln"><span>코트비</span><span>' + won(fee) + '</span></div>' +
+  let h = entry
+    ? '<div class="ln total" style="border-top: 0; margin-top: 0; padding-top: 0"><span>참가비 (1인)</span><span>' + won(ef) + '</span></div>' +
+      (s.n > 1 ? '<div class="note">' + s.n + '명 합계 ' + won(s.total) + '</div>' : '')
+    : '<div class="ln"><span>코트비</span><span>' + won(fee) + '</span></div>' +
     '<div class="ln"><span>캔볼</span><span>' + won(bp) + (bp && owner ? ' (' + esc(owner) + ')' : '') + '</span></div>' +
     '<div class="ln total"><span>1인 (' + s.n + '명)</span><span>' + (s.n && s.total ? won(s.per) : "–") + '</span></div>';
   if (bp && owner && s.n && ins.indexOf(owner) >= 0) {
     const d = s.due(owner);
     h += '<div class="note">' + esc(owner) + '은(는) 캔볼 값을 빼고 ' + (d < 0 ? won(-d) + " 돌려받아요." : won(d) + " 내요.") + '</div>';
   }
-  h += '<div class="note">참석 인원으로 나눠 10원 단위로 올려요.</div>';
+  if (!entry) h += '<div class="note">참석 인원으로 나눠 10원 단위로 올려요.</div>';
   el("f-ledger").innerHTML = h;
 
   // 내 코트: 사람별 받을 돈 + 받음 체크 / 남 코트: 내 정산 완료 스위치
@@ -699,7 +719,8 @@ function renderSettle() {
   } else {
     const d = ins.indexOf(ME) >= 0 && s.total ? s.due(ME) : null;
     el("f-mypaid-row").hidden = !F.host && !showLedger;
-    el("f-mypaid-sub").textContent = (F.host ? F.host + "에게 " : "예약자에게 ") +
+    if (entry) el("f-mypaid-sub").textContent = (F.host ? F.host + "에게 " : "") + "참가비" + (ef ? " " + won(ef) + "을" : "를") + " 냈으면 켜요.";
+    else el("f-mypaid-sub").textContent = (F.host ? F.host + "에게 " : "예약자에게 ") +
       (d === null ? "내 몫을 보냈으면 켜요." : d < 0 ? won(-d) + " 받을 차례예요. 받았으면 켜요." : "내 몫 " + won(d) + "을 보냈으면 켜요.");
   }
   // 보여 줄 게 없으면 정산 칸째로 숨긴다
@@ -748,6 +769,7 @@ function openForm(dateKey, ev) {
   el("f-memo").value = ev ? ev.memo : "";
   el("f-fee").value = ev && ev.courtFee ? ev.courtFee : "";
   el("f-bprice").value = ev && ev.ballPrice ? ev.ballPrice : "";
+  el("f-entry").value = ev && ev.entryFee ? ev.entryFee : "";
   el("f-mypaid").checked = ev ? ev.myPaid : false;
   el("f-person").value = "";
   F = {
@@ -756,7 +778,8 @@ function openForm(dateKey, ev) {
     people: ev ? ev.participants.map(p => Object.assign({}, p)) : [{ id: uid(), name: ME, gender: ME_GENDER, at: Date.now() }],
     host: ev ? (ev.mine ? ME : ev.host) : ME,
     owner: ev ? ev.ballOwner : ME,
-    paid: ev ? ev.paid.slice() : []
+    paid: ev ? ev.paid.slice() : [],
+    feeMode: ev ? ev.feeMode : "split"
   };
   F.g = nextGender();
   renderForm();
@@ -767,6 +790,7 @@ el("f-types").addEventListener("click", e => {
   const b = e.target.closest("[data-type]");
   if (!b) return;
   F.type = F.type === b.dataset.type ? "" : b.dataset.type;
+  if (F.type === "교류전") { F.feeMode = "entry"; if (F.host === ME) F.host = ""; if (F.owner === ME) F.owner = ""; renderRoles(); renderSettle(); }
   const preset = TYPE_PRESET[F.type];
   if (preset && (F.capAuto || (!F.capF && !F.capM))) { F.capF = preset[0]; F.capM = preset[1]; F.capAuto = true; }
   F.g = nextGender();
@@ -832,7 +856,13 @@ el("f-payrows").addEventListener("click", e => {
   if (k >= 0) F.paid.splice(k, 1); else F.paid.push(n);
   renderSettle();
 });
-["f-fee", "f-bprice"].forEach(id => el(id).addEventListener("input", renderSettle));
+["f-fee", "f-bprice", "f-entry"].forEach(id => el(id).addEventListener("input", renderSettle));
+el("f-feemode").addEventListener("click", e => {
+  const b = e.target.closest("[data-fm]");
+  if (!b) return;
+  F.feeMode = b.dataset.fm;
+  renderSettle();
+});
 document.addEventListener("click", e => { if (e.target.closest("[data-close]")) el("dlg").close(); });
 
 el("f-del").addEventListener("click", () => {
@@ -868,7 +898,8 @@ el("form").addEventListener("submit", e => {
     place: place, court: str(el("f-court").value), gameType: F.type,
     capF: F.capF, capM: F.capM, capacity: F.capF + F.capM,
     memo: str(el("f-memo").value),
-    courtFee: num(el("f-fee").value), ballPrice: num(el("f-bprice").value),
+    courtFee: F.feeMode === "entry" ? 0 : num(el("f-fee").value), ballPrice: F.feeMode === "entry" ? 0 : num(el("f-bprice").value),
+    feeMode: F.feeMode, entryFee: F.feeMode === "entry" ? num(el("f-entry").value) : 0,
     mine: mine, host: mine ? ME : (names.indexOf(F.host) >= 0 ? F.host : ""),
     ball: ball, ballOwner: ball ? ME : (names.indexOf(F.owner) >= 0 ? F.owner : ""),
     participants: F.people.map(p => ({ id: p.id, name: p.name, gender: p.gender || "", at: p.at || Date.now() })),
