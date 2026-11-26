@@ -156,7 +156,7 @@
   .btn.danger { background: transparent; color: var(--sun); padding: 0 8px; }
 
   .fld { display: grid; gap: 6px; min-width: 0; }
-  .fld > label, .lbl { font-size: 12px; font-weight: 500; color: var(--fg2); padding-left: 4px; }
+  .fld > label:not(.switch-row), .lbl { font-size: 12px; font-weight: 500; color: var(--fg2); padding-left: 4px; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .row.court-row { grid-template-columns: 1fr 96px; }
   input[type="text"], input[type="date"], input[type="time"], textarea {
@@ -215,7 +215,7 @@
   .gseg button { border: 0; background: transparent; width: 38px; border-radius: 9px; font-size: 13px; color: var(--fg2); }
   .gseg button[aria-pressed="true"] { background: #fff; color: var(--fg); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
   input[inputmode="numeric"] { font-variant-numeric: tabular-nums; }
-  .sub { display: grid; gap: 6px; padding: 0 0 0 4px; }
+  .sub { display: grid; gap: 6px; }
   .ledger { display: grid; gap: 4px; padding: 12px; border-radius: 12px; background: var(--soft); font-size: 13px; }
   .ledger .ln { display: flex; justify-content: space-between; color: var(--fg2); font-variant-numeric: tabular-nums; }
   .ledger .ln.total { color: var(--fg); font-weight: 700; padding-top: 6px; margin-top: 2px; border-top: 1px dashed #D9DCE1; }
@@ -253,7 +253,7 @@
 <dialog id="dlg" aria-labelledby="f-title">
   <form class="sheet" id="form" novalidate>
     <div class="sh-head">
-      <h2 id="f-title">일정 등록</h2>
+      <h2 id="f-title" tabindex="-1" autofocus style="outline: none">일정 등록</h2>
       <button type="button" class="x" data-close aria-label="닫기">✕</button>
     </div>
     <div class="sh-body">
