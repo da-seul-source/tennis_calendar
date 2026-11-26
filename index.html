@@ -199,6 +199,7 @@
   .money { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--fg2); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .money.get { color: var(--tint-fg); }
   .r2 { display: flex; align-items: center; gap: 8px; }
+  .club { font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 6px; border-radius: 5px; background: var(--tint); color: var(--tint-fg); white-space: nowrap; }
   .short { font-size: 11px; font-weight: 500; line-height: 16px; padding: 1px 6px; border-radius: 999px; color: var(--sun); box-shadow: inset 0 0 0 1px currentColor; white-space: nowrap; }
   .person.open { background: transparent; color: var(--fg3); box-shadow: inset 0 0 0 1px var(--line); padding: 4px 12px; font-weight: 400; }
   .memo { font-size: 12px; color: var(--fg2); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -257,6 +258,14 @@
       <button type="button" class="x" data-close aria-label="닫기">✕</button>
     </div>
     <div class="sh-body">
+      <div class="fld">
+        <span class="lbl">종류</span>
+        <div class="seg" id="f-kind" role="group" aria-label="일정 종류">
+          <button type="button" data-kind="court" aria-pressed="true">코트</button>
+          <button type="button" data-kind="club" aria-pressed="false">클럽</button>
+        </div>
+        <div class="chips" id="f-tags" hidden></div>
+      </div>
       <div class="row court-row">
         <div class="fld"><label for="f-place">테니스장</label><input id="f-place" type="text" placeholder="올림픽공원" maxlength="40" autocomplete="off"></div>
         <div class="fld"><label for="f-court">코트 번호</label><input id="f-court" type="text" placeholder="3번" maxlength="12" autocomplete="off"></div>
@@ -293,22 +302,15 @@
       </div>
 
       <div class="fld">
-        <span class="lbl">예약자</span>
+        <span class="lbl" id="f-host-lbl">예약자</span>
         <div class="chips" id="f-host"></div>
-        <small class="hint">나를 고르면 내 코트예요. 참석자별로 정산 받았는지 체크해요.</small>
+        <small class="hint" id="f-host-hint">나를 고르면 내 코트예요. 참석자별로 정산 받았는지 체크해요.</small>
       </div>
-      <div class="fld">
+      <div class="fld" id="f-owner-fld">
         <span class="lbl">캔볼 가져오는 사람</span>
         <div class="chips" id="f-owner"></div>
       </div>
 
-      <div class="fld">
-        <span class="lbl">비용</span>
-        <div class="seg" id="f-feemode" role="group" aria-label="비용 방식">
-          <button type="button" data-fm="split" aria-pressed="true">코트비 나눠 내기</button>
-          <button type="button" data-fm="entry" aria-pressed="false">참가비</button>
-        </div>
-      </div>
       <div class="fld" id="f-entry-box" hidden><label for="f-entry">참가비 (1인, 원)</label><input id="f-entry" type="text" inputmode="numeric" placeholder="30000" maxlength="9" autocomplete="off"></div>
       <div class="row" id="f-split-box">
         <div class="fld"><label for="f-fee">코트비 (원)</label><input id="f-fee" type="text" inputmode="numeric" placeholder="20000" maxlength="9" autocomplete="off"></div>
@@ -372,7 +374,8 @@ const EVENTS = collection(db, "events");
 
 /* ---------- 상태 ---------- */
 const DOW = ["일", "월", "화", "수", "목", "금", "토"];
-const TYPES = ["혼복", "여복", "남복", "단식", "랠리", "교류전"];
+const TYPES = ["혼복", "여복", "남복", "단식", "랠리"];
+const CLUB_TAGS = ["정모", "교류전", "대회", "번개"];
 const TYPE_PRESET = { "혼복": [2, 2], "여복": [4, 0], "남복": [0, 4] };   // 고르면 여/남 인원을 채워 준다
 let events = [];
 /* '오늘'은 폰 설정과 상관없이 한국 시간으로 */
@@ -449,7 +452,9 @@ function normalize(id, d) {
     place: str(d.place), court: str(d.court), type: str(d.gameType),
     capF: capF, capM: capM, memo: str(d.memo),
     courtFee: num(d.courtFee), ballPrice: num(d.ballPrice),
-    feeMode: d.feeMode === "entry" ? "entry" : "split", entryFee: num(d.entryFee),
+    kind: d.kind === "club" || d.feeMode === "entry" ? "club" : "court",
+    clubTag: str(d.clubTag) || (str(d.gameType) === "교류전" ? "교류전" : ""),
+    entryFee: num(d.entryFee),
     ball: ball, ballOwner: ball ? ME : str(d.ballOwner),
     host: str(d.host),
     participants: parts,
@@ -504,8 +509,8 @@ function card(ev) {
 
   // 금액: 내 코트면 1인 금액, 남 코트면 내가 낼 몫 (캔볼 가져가면 그만큼 빼고)
   let money = "";
-  const s = settleOf(ev.courtFee, ev.ballPrice, ev.ballOwner, ev.names, ev.feeMode === "entry" ? ev.entryFee : 0);
-  if (ev.feeMode === "entry") { if (ev.entryFee) money = '<span class="money">참가비 ' + won(ev.entryFee) + '</span>'; }
+  const s = settleOf(ev.courtFee, ev.ballPrice, ev.ballOwner, ev.names, ev.kind === "club" ? ev.entryFee : 0);
+  if (ev.kind === "club") { if (ev.entryFee) money = '<span class="money">참가비 ' + won(ev.entryFee) + '</span>'; }
   else if (ev.mine && s.total && !s.n) money = '<span class="money">코트비 ' + won(s.total) + '</span>';
   else if (s.total && s.n) {
     if (ev.mine) money = '<span class="money">' + (s.n > 1 ? "1인 " + won(s.per) : "코트비 " + won(s.total)) + '</span>';
@@ -518,7 +523,8 @@ function card(ev) {
   const title = (ev.place || "장소 미정") + (ev.court ? " " + ev.court : "");
   return '<article class="ev' + (past ? " past" : "") + '" data-id="' + esc(ev.id) + '" tabindex="0" aria-label="' + esc(title) + ' 일정 수정">' +
     '<div class="hd"><div class="r1"><span class="court">' + esc(title) + '</span>' +
-    (ev.type ? '<span class="type">' + esc(ev.type) + '</span>' : '') +
+    (ev.kind === "club" ? '<span class="club">' + esc(ev.clubTag || "클럽") + '</span>' : '') +
+    (ev.type && ev.type !== "교류전" ? '<span class="type">' + esc(ev.type) + '</span>' : '') +
     (ev.ball ? ballSvg("내가 캔볼 챙김") : '') +
     (!past && left > 0 ? '<span class="short">' + left + '명 부족</span>' : '') +
     '<span class="stat">' + settle + '</span></div>' +
@@ -681,10 +687,9 @@ function renderRoles() {
 }
 function renderSettle() {
   const mine = F.host === ME;
-  const entry = F.feeMode === "entry";
+  const entry = F.kind === "club";
   el("f-entry-box").hidden = !entry;
   el("f-split-box").hidden = entry;
-  document.querySelectorAll("#f-feemode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fm === F.feeMode)));
   const ef = entry ? num(el("f-entry").value) : 0;
   const fee = entry ? 0 : num(el("f-fee").value), bp = entry ? 0 : num(el("f-bprice").value);
   const owner = F.owner;
@@ -726,7 +731,16 @@ function renderSettle() {
   // 보여 줄 게 없으면 정산 칸째로 숨긴다
   el("f-settle").hidden = el("f-ledger").hidden && el("f-payrows").hidden && el("f-mypaid-row").hidden;
 }
-function renderForm() { renderTypes(); renderCaps(); renderPeople(); renderRoles(); renderSettle(); renderGseg(); }
+function renderKind() {
+  const club = F.kind === "club";
+  document.querySelectorAll("#f-kind [data-kind]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.kind === F.kind)));
+  el("f-tags").hidden = !club;
+  el("f-tags").innerHTML = CLUB_TAGS.map(t => '<button type="button" class="opt" data-tag="' + t + '" aria-pressed="' + (F.clubTag === t) + '">' + t + '</button>').join("");
+  el("f-host-lbl").textContent = club ? "주최" : "예약자";
+  el("f-host-hint").textContent = club ? "참가비를 보낼 사람이에요." : "나를 고르면 내 코트예요. 참석자별로 정산 받았는지 체크해요.";
+  el("f-owner-fld").hidden = club;
+}
+function renderForm() { renderKind(); renderTypes(); renderCaps(); renderPeople(); renderRoles(); renderSettle(); renderGseg(); }
 
 function renderGseg() {
   document.querySelectorAll(".gseg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.g === F.g)));
@@ -779,7 +793,8 @@ function openForm(dateKey, ev) {
     host: ev ? (ev.mine ? ME : ev.host) : ME,
     owner: ev ? ev.ballOwner : ME,
     paid: ev ? ev.paid.slice() : [],
-    feeMode: ev ? ev.feeMode : "split"
+    kind: ev ? ev.kind : "court",
+    clubTag: ev ? ev.clubTag : ""
   };
   F.g = nextGender();
   renderForm();
@@ -790,7 +805,6 @@ el("f-types").addEventListener("click", e => {
   const b = e.target.closest("[data-type]");
   if (!b) return;
   F.type = F.type === b.dataset.type ? "" : b.dataset.type;
-  if (F.type === "교류전") { F.feeMode = "entry"; if (F.host === ME) F.host = ""; if (F.owner === ME) F.owner = ""; renderRoles(); renderSettle(); }
   const preset = TYPE_PRESET[F.type];
   if (preset && (F.capAuto || (!F.capF && !F.capM))) { F.capF = preset[0]; F.capM = preset[1]; F.capAuto = true; }
   F.g = nextGender();
@@ -857,11 +871,20 @@ el("f-payrows").addEventListener("click", e => {
   renderSettle();
 });
 ["f-fee", "f-bprice", "f-entry"].forEach(id => el(id).addEventListener("input", renderSettle));
-el("f-feemode").addEventListener("click", e => {
-  const b = e.target.closest("[data-fm]");
+el("f-kind").addEventListener("click", e => {
+  const b = e.target.closest("[data-kind]");
+  if (!b || F.kind === b.dataset.kind) return;
+  F.kind = b.dataset.kind;
+  // 클럽은 남이 연 자리: 주최·캔볼에서 '나'를 뺀다. 코트로 돌아오면 다시 나로
+  if (F.kind === "club") { if (F.host === ME) F.host = ""; F.owner = ""; }
+  else { if (!F.host) F.host = ME; if (!F.owner) F.owner = ME; }
+  renderKind(); renderRoles(); renderSettle();
+});
+el("f-tags").addEventListener("click", e => {
+  const b = e.target.closest("[data-tag]");
   if (!b) return;
-  F.feeMode = b.dataset.fm;
-  renderSettle();
+  F.clubTag = F.clubTag === b.dataset.tag ? "" : b.dataset.tag;
+  renderKind();
 });
 document.addEventListener("click", e => { if (e.target.closest("[data-close]")) el("dlg").close(); });
 
@@ -891,17 +914,18 @@ el("form").addEventListener("submit", e => {
   if (!place) return showErr("테니스장을 적어 주세요.", "f-place");
   if (!date) return showErr("날짜를 골라 주세요.", "f-date");
 
-  const mine = F.host === ME, ball = F.owner === ME;
+  const club = F.kind === "club";
+  const mine = F.host === ME, ball = !club && F.owner === ME;
   const names = F.people.map(p => p.name);
   const payload = {
     date: date, start: el("f-start").value || "", end: el("f-end").value || "",
     place: place, court: str(el("f-court").value), gameType: F.type,
     capF: F.capF, capM: F.capM, capacity: F.capF + F.capM,
     memo: str(el("f-memo").value),
-    courtFee: F.feeMode === "entry" ? 0 : num(el("f-fee").value), ballPrice: F.feeMode === "entry" ? 0 : num(el("f-bprice").value),
-    feeMode: F.feeMode, entryFee: F.feeMode === "entry" ? num(el("f-entry").value) : 0,
+    courtFee: club ? 0 : num(el("f-fee").value), ballPrice: club ? 0 : num(el("f-bprice").value),
+    kind: F.kind, clubTag: club ? F.clubTag : "", feeMode: club ? "entry" : "split", entryFee: club ? num(el("f-entry").value) : 0,
     mine: mine, host: mine ? ME : (names.indexOf(F.host) >= 0 ? F.host : ""),
-    ball: ball, ballOwner: ball ? ME : (names.indexOf(F.owner) >= 0 ? F.owner : ""),
+    ball: ball, ballOwner: club ? "" : ball ? ME : (names.indexOf(F.owner) >= 0 ? F.owner : ""),
     participants: F.people.map(p => ({ id: p.id, name: p.name, gender: p.gender || "", at: p.at || Date.now() })),
     paid: F.paid.filter(n => names.indexOf(n) >= 0),
     myPaid: el("f-mypaid").checked

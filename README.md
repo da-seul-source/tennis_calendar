@@ -12,10 +12,11 @@
 - 금액: (코트비 + 캔볼 값) ÷ 참석 인원, 10원 단위 올림. 캔볼 가져온 사람은 캔볼 값을 빼고 낸다.
   카드에 내 코트면 '1인 금액', 남 코트면 '내 몫'을 보여 준다.
 - 인원: 여/남 정원. 남는 자리는 카드에 빈자리로 보인다 (대기 없음).
+- 종류: 코트(코트비 나눠 내기) / 클럽(정모·교류전·대회·번개, 1인 참가비, 주최에게 정산).
 - 카드를 누르면 수정·삭제, 오른쪽 아래 버튼으로 등록.
 
 ## 일정 문서 필드
-`date, start, end, place, court, gameType, capF, capM, capacity, memo, courtFee, ballPrice, participants[{id,name,gender,at}], mine, host, ball, ballOwner, paid[이름], myPaid, createdAt`
+`date, start, end, place, court, gameType, capF, capM, capacity, memo, courtFee, ballPrice, participants[{id,name,gender,at}], mine, host, ball, ballOwner, paid[이름], myPaid, kind(court|club), clubTag, feeMode, entryFee, createdAt`
 
 ## 설정
 1. `index.html`의 `firebaseConfig`를 Firebase 프로젝트 값으로 바꾼다.
